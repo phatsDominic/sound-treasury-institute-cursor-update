@@ -35,6 +35,13 @@ type PowerLawPoint = {
 
 type PowerLawPointNonNull = Omit<PowerLawPoint, 'price'> & { price: number };
 
+type AssetEntry = {
+  symbol: string;
+  name: string;
+  color: string;
+  googleSymbol?: string;
+};
+
 const POWER_LAW_CACHE: {
   data: PowerLawPoint[] | null;
   stats: CachedStats;
@@ -1372,7 +1379,10 @@ const DataModelsView = () => {
     }
   };
 
-  const processComparisonData = (historyData: Record<number, Record<string, any>>, assets: typeof SECTORS['chemicals']['assets']) => {
+  const processComparisonData = (
+    historyData: Record<number, Record<string, any>>,
+    assets: AssetEntry[]
+  ) => {
       const years = [];
       const wins: Record<string, number> = {};
       assets.forEach(a => wins[a.symbol] = 0);
