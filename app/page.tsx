@@ -24,7 +24,20 @@ const START_YEAR = 2016;
 const CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes
 const POWER_LAW_DOWNSAMPLE_STEP = 2;
 
-const POWER_LAW_CACHE = {
+type PowerLawPoint = {
+  date: number;
+  price: number | null;
+  fairPrice: number;
+  daysSinceGenesis: number;
+  upperBand?: number;
+  lowerBand?: number;
+};
+
+const POWER_LAW_CACHE: {
+  data: PowerLawPoint[] | null;
+  stats: CachedStats;
+  fetchedAt: number;
+} = {
   data: null,
   stats: null,
   fetchedAt: 0,
@@ -1194,7 +1207,7 @@ const DataModelsView = () => {
 
   const hydrateFromCache = (labelSuffix = ' (cached)') => {
     if (!POWER_LAW_CACHE.data) return false;
-    setPlData(POWER_LAW_CACHE.data);
+    setPlData(POWER_LAW_CACHE.data as PowerLawPoint[]);
     const stats = (POWER_LAW_CACHE.stats || null) as CachedStats;
     if (stats) {
       setStdDev(stats.stdDev ?? 0);
@@ -1261,14 +1274,14 @@ const DataModelsView = () => {
     try {
       const { source: sourceName, data: rawPoints } = await fetchBestDataSource();
 
-      const processedDataRaw = (rawPoints as Array<{ date: number; price: number | null | undefined }>).map((pt) => {
+    const processedDataRaw = (rawPoints as Array<{ date: number; price: number | null | undefined }>).map((pt) => {
         if (pt.price === null || pt.price === undefined) return null;
         const daysSinceGenesis = (pt.date - GENESIS_DATE) / ONE_DAY_MS;
         const fairPrice = daysSinceGenesis > 0 ? calculateFairPrice(daysSinceGenesis) : 0;
         return { date: pt.date, price: pt.price, fairPrice, daysSinceGenesis };
       }).filter(d => d !== null && d.price > 0 && d.fairPrice > 0 && d.daysSinceGenesis > 1);
 
-      const processedData = processedDataRaw as Array<{ date: number; price: number; fairPrice: number; daysSinceGenesis: number }>;
+      const processedData = processedDataRaw as Array<PowerLawPoint>;
 
       if (processedData.length === 0) throw new Error('No valid data');
 
@@ -1301,7 +1314,7 @@ const DataModelsView = () => {
         lowerBand: d.fairPrice * Math.exp(-1 * newStdDev),
       }));
 
-      const combined = downsampleSeries(combinedFull, POWER_LAW_DOWNSAMPLE_STEP);
+      const combined = downsampleSeries(combinedFull, POWER_LAW_DOWNSAMPLE_STEP) as PowerLawPoint[];
 
       const logActuals = processedData.map(d => Math.log(d.price));
       const meanLogActual = logActuals.reduce((a, b) => a + b, 0) / logActuals.length;
