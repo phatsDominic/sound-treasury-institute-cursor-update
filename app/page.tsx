@@ -531,7 +531,7 @@ const calculateFairPrice = (days: number) => days <= 0 ? 0 : MODEL_COEFF * Math.
 const formatPrice = (val: number | null) => !val ? '-' : val > 1000 ? `$${val.toLocaleString(undefined, {maximumFractionDigits: 0})}` : `$${val.toFixed(2)}`;
 const formatCurrency = (val: number) => val >= 1000000 ? `$${(val / 1000000).toFixed(1)}M` : val >= 1000 ? `$${(val / 1000).toFixed(0)}k` : `$${val.toFixed(0)}`;
 
-const fetchWithRetry = async (url, maxRetries = 3, initialDelay = 1000) => {
+const fetchWithRetry = async (url: string, maxRetries = 3, initialDelay = 1000) => {
     let delay = initialDelay;
     for (let i = 0; i < maxRetries; i++) {
         try {
@@ -546,7 +546,7 @@ const fetchWithRetry = async (url, maxRetries = 3, initialDelay = 1000) => {
     }
 };
 
-const downsampleSeries = (data, step = 1) => {
+const downsampleSeries = (data: any[], step = 1) => {
   if (step <= 1) return data;
   return data.filter((_, idx) => idx % step === 0 || idx === data.length - 1);
 };
