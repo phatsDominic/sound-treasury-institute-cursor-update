@@ -1195,13 +1195,13 @@ const DataModelsView = () => {
   const hydrateFromCache = (labelSuffix = ' (cached)') => {
     if (!POWER_LAW_CACHE.data) return false;
     setPlData(POWER_LAW_CACHE.data);
-    if (POWER_LAW_CACHE.stats) {
-      const stats = POWER_LAW_CACHE.stats;
-      setStdDev(stats.stdDev);
-      setRSquared(stats.rSquared);
-      setCurrentPrice(stats.currentPrice);
-      setCurrentFairPrice(stats.currentFairPrice);
-      setPlDataSource(`${stats.dataSource}${labelSuffix}`);
+    const stats = (POWER_LAW_CACHE.stats || null) as CachedStats;
+    if (stats) {
+      setStdDev(stats.stdDev ?? 0);
+      setRSquared(stats.rSquared ?? 0);
+      setCurrentPrice(stats.currentPrice ?? null);
+      setCurrentFairPrice(stats.currentFairPrice ?? null);
+      setPlDataSource(`${stats.dataSource ?? 'Cached'}${labelSuffix}`);
     } else {
       setPlDataSource('Cached');
     }
