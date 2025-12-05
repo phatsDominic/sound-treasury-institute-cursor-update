@@ -33,6 +33,8 @@ type PowerLawPoint = {
   lowerBand?: number;
 };
 
+type PowerLawPointNonNull = Omit<PowerLawPoint, 'price'> & { price: number };
+
 const POWER_LAW_CACHE: {
   data: PowerLawPoint[] | null;
   stats: CachedStats;
@@ -1279,7 +1281,7 @@ const DataModelsView = () => {
         const daysSinceGenesis = (pt.date - GENESIS_DATE) / ONE_DAY_MS;
         const fairPrice = daysSinceGenesis > 0 ? calculateFairPrice(daysSinceGenesis) : 0;
         return { date: pt.date, price: pt.price, fairPrice, daysSinceGenesis };
-      }).filter((d): d is PowerLawPoint => d !== null && d.price !== null && d.fairPrice > 0 && d.daysSinceGenesis > 1);
+      }).filter((d): d is PowerLawPointNonNull => d !== null && d.price !== null && d.fairPrice > 0 && d.daysSinceGenesis > 1);
 
       if (processedData.length === 0) throw new Error('No valid data');
 
