@@ -42,5 +42,3 @@ export const fetchGooglePrice = async (quoteId?: string) => {
 
 
 
-
-

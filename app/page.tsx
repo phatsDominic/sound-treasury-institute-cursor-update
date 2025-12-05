@@ -1,16 +1,17 @@
-"use client";
-
+'use client';
 import React, { useState, useEffect } from 'react';
+
 import { 
-  BarChart3, ShieldCheck, HardHat, ArrowRight, Activity, 
-  TrendingUp, FileText, Menu, X, Anchor, Factory, 
-  Loader2, AlertCircle, RefreshCcw, Download, Settings, 
-  Database, Trophy, LayoutDashboard, FlaskConical
+  Activity, Anchor, BarChart3, Building, Database, Download, Factory, FileText,
+  FlaskConical, Globe, HardHat, LayoutDashboard, Loader2, Menu, RefreshCcw,
+  Settings, ShieldCheck, Trophy, TrendingUp, Truck, X, AlertCircle, Car
 } from 'lucide-react';
+
 import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, 
+  Line, XAxis, YAxis, CartesianGrid, 
   Tooltip, ResponsiveContainer, ComposedChart
 } from 'recharts';
+
 
 // --- 1. CONSTANTS & CONFIGURATION ---
 
@@ -20,53 +21,517 @@ const PROJECT_TO_YEAR = 2035;
 const MODEL_COEFF = 7.34596586961056e-18;
 const MODEL_EXPONENT = 5.82;
 const START_YEAR = 2016;
+const CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes
+const POWER_LAW_DOWNSAMPLE_STEP = 2;
+
+const POWER_LAW_CACHE = {
+  data: null,
+  stats: null,
+  fetchedAt: 0,
+};
 
 // Image Paths
 const HERO_IMAGE_LOCAL = "/assets/industrial-refinery-hero.png";
-const MONOCHROME_IMAGE_LOCAL = "/assets/industrial-monochrome.png";
+const MONOCHROME_IMAGE_LOCAL = "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?q=80&w=2672&auto=format&fit=crop";
 const HERO_FALLBACK = "https://images.unsplash.com/photo-1518709911915-712d59df4634?q=80&w=2600&auto=format&fit=crop"; 
 const MONOCHROME_FALLBACK = "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?q=80&w=2672&auto=format&fit=crop";
 
-// Types
-interface Asset {
-  symbol: string;
-  name: string;
-  color: string;
-}
-
-// Comparison Assets
-const ASSETS: Asset[] = [
-  { symbol: 'BTC-USD', name: 'Bitcoin', color: '#f7931a' },
-  { symbol: 'DOW', name: 'Dow Inc.', color: '#C8102E' }, 
-  { symbol: 'BASFY', name: 'BASF (ADR)', color: '#004A96' }, 
-  { symbol: 'CE', name: 'Celanese', color: '#008542' },
-  { symbol: 'MEOH', name: 'Methanex', color: '#582C83' },
-  { symbol: 'FSCHX', name: 'Fidelity Chem', color: '#71c7ec' }
-];
-
-const STATIC_HISTORY: Record<number, Record<string, { start: number; end: number } | null>> = {
-  2016: { 'BTC-USD': { start: 434, end: 963 }, 'DOW': null, 'BASFY': { start: 16.5, end: 20.8 }, 'CE': { start: 66, end: 78.5 }, 'MEOH': { start: 27.77, end: 45.95 }, 'FSCHX': { start: 12.12, end: 14.91 } },
-  2017: { 'BTC-USD': { start: 963, end: 13860 }, 'DOW': null, 'BASFY': { start: 20.8, end: 27.5 }, 'CE': { start: 78.5, end: 107 }, 'MEOH': { start: 45.95, end: 54.15 }, 'FSCHX': { start: 14.91, end: 18.42 } },
-  2018: { 'BTC-USD': { start: 13860, end: 3740 }, 'DOW': null, 'BASFY': { start: 27.5, end: 17.2 }, 'CE': { start: 107, end: 90 }, 'MEOH': { start: 54.15, end: 64.49 }, 'FSCHX': { start: 18.42, end: 14.42 } },
-  2019: { 'BTC-USD': { start: 3740, end: 7200 }, 'DOW': { start: 51.63, end: 54.73 }, 'BASFY': { start: 17.2, end: 19.5 }, 'CE': { start: 90, end: 123 }, 'MEOH': { start: 64.49, end: 35.42 }, 'FSCHX': { start: 14.42, end: 11.95 } },
-  2020: { 'BTC-USD': { start: 7200, end: 28990 }, 'DOW': { start: 46.07, end: 55.5 }, 'BASFY': { start: 19.5, end: 17.8 }, 'CE': { start: 123, end: 129 }, 'MEOH': { start: 35.42, end: 45.45 }, 'FSCHX': { start: 11.95, end: 12.26 } },
-  2021: { 'BTC-USD': { start: 28990, end: 46200 }, 'DOW': { start: 55.5, end: 56.72 }, 'BASFY': { start: 17.8, end: 19.2 }, 'CE': { start: 129, end: 168 }, 'MEOH': { start: 45.45, end: 39.55 }, 'FSCHX': { start: 12.26, end: 16.76 } },
-  2022: { 'BTC-USD': { start: 46200, end: 16530 }, 'DOW': { start: 59.73, end: 50.39 }, 'BASFY': { start: 19.2, end: 13.5 }, 'CE': { start: 168, end: 102.2 }, 'MEOH': { start: 39.55, end: 37.86 }, 'FSCHX': { start: 16.76, end: 15.81 } },
-  2023: { 'BTC-USD': { start: 16530, end: 42260 }, 'DOW': { start: 59.35, end: 54.84 }, 'BASFY': { start: 13.5, end: 15.2 }, 'CE': { start: 102.2, end: 155.3 }, 'MEOH': { start: 37.86, end: 47.36 }, 'FSCHX': { start: 15.81, end: 15.41 } },
-  2024: { 'BTC-USD': { start: 42260, end: 98000 }, 'DOW': { start: 53.6, end: 40.13 }, 'BASFY': { start: 15.2, end: 12.44 }, 'CE': { start: 146.14, end: 68.76 }, 'MEOH': { start: 45.58, end: 49 }, 'FSCHX': { start: 14.78, end: 13.53 } },
-  2025: { 'BTC-USD': { start: 98000, end: 87556 }, 'DOW': { start: 39.05, end: 22.21 }, 'BASFY': { start: 12.44, end: 12.18 }, 'CE': { start: 68, end: 37.93 }, 'MEOH': { start: 49.55, end: 35.09 }, 'FSCHX': { start: 12.88, end: 11.57 } }
+const SECTORS = {
+  chemicals: {
+    label: 'Chemicals',
+    icon: <FlaskConical className="text-purple-500" />,
+    assets: [
+      { symbol: 'BTC-USD', name: 'Bitcoin', color: '#f7931a' },
+      { symbol: 'DOW', name: 'Dow Inc.', color: '#C8102E' }, 
+      { symbol: 'BASFY', name: 'BASF (ADR)', color: '#004A96' }, 
+      { symbol: 'CE', name: 'Celanese', color: '#008542' },
+      { symbol: 'MEOH', name: 'Methanex', color: '#582C83' },
+      { symbol: 'FSCHX', name: 'Fidelity Chem', color: '#71c7ec' }
+    ],
+    staticHistory: {
+      2016: { 'BTC-USD': { start: 434, end: 963 }, 'DOW': null, 'BASFY': { start: 16.5, end: 20.8 }, 'CE': { start: 66, end: 78.5 }, 'MEOH': { start: 27.77, end: 45.95 }, 'FSCHX': { start: 12.12, end: 14.91 } },
+      2017: { 'BTC-USD': { start: 963, end: 13860 }, 'DOW': null, 'BASFY': { start: 20.8, end: 27.5 }, 'CE': { start: 78.5, end: 107 }, 'MEOH': { start: 45.95, end: 54.15 }, 'FSCHX': { start: 14.91, end: 18.42 } },
+      2018: { 'BTC-USD': { start: 13860, end: 3740 }, 'DOW': null, 'BASFY': { start: 27.5, end: 17.2 }, 'CE': { start: 107, end: 90 }, 'MEOH': { start: 54.15, end: 64.49 }, 'FSCHX': { start: 18.42, end: 14.42 } },
+      2019: { 'BTC-USD': { start: 3740, end: 7200 }, 'DOW': { start: 51.63, end: 54.73 }, 'BASFY': { start: 17.2, end: 19.5 }, 'CE': { start: 90, end: 123 }, 'MEOH': { start: 64.49, end: 35.42 }, 'FSCHX': { start: 14.42, end: 11.95 } },
+      2020: { 'BTC-USD': { start: 7200, end: 28990 }, 'DOW': { start: 46.07, end: 55.5 }, 'BASFY': { start: 19.5, end: 17.8 }, 'CE': { start: 123, end: 129 }, 'MEOH': { start: 35.42, end: 45.45 }, 'FSCHX': { start: 11.95, end: 12.26 } },
+      2021: { 'BTC-USD': { start: 28990, end: 46200 }, 'DOW': { start: 55.5, end: 56.72 }, 'BASFY': { start: 17.8, end: 19.2 }, 'CE': { start: 129, end: 168 }, 'MEOH': { start: 45.45, end: 39.55 }, 'FSCHX': { start: 12.26, end: 16.76 } },
+      2022: { 'BTC-USD': { start: 46200, end: 16530 }, 'DOW': { start: 59.73, end: 50.39 }, 'BASFY': { start: 19.2, end: 13.5 }, 'CE': { start: 168, end: 102.2 }, 'MEOH': { start: 39.55, end: 37.86 }, 'FSCHX': { start: 16.76, end: 15.81 } },
+      2023: { 'BTC-USD': { start: 16530, end: 42260 }, 'DOW': { start: 59.35, end: 54.84 }, 'BASFY': { start: 13.5, end: 15.2 }, 'CE': { start: 102.2, end: 155.3 }, 'MEOH': { start: 37.86, end: 47.36 }, 'FSCHX': { start: 15.81, end: 15.41 } },
+      2024: { 'BTC-USD': { start: 42260, end: 98000 }, 'DOW': { start: 53.6, end: 40.13 }, 'BASFY': { start: 15.2, end: 12.44 }, 'CE': { start: 146.14, end: 68.76 }, 'MEOH': { start: 45.58, end: 49 }, 'FSCHX': { start: 14.78, end: 13.53 } },
+      2025: { 
+        'BTC-USD': { start: 94419.76, end: 87244.6 }, 
+        'DOW': { start: 37.35, end: 23.20 }, 
+        'BASFY': { start: 10.31, end: 12.94 }, 
+        'CE': { start: 68.25, end: 39.46 }, 
+        'MEOH': { start: 48.83, end: 35.02 }, 
+        'FSCHX': { start: 12.97, end: 12.04 } 
+      }
+    }
+  },
+  agriculture: {
+    label: 'Agriculture',
+    icon: <Factory className="text-green-500" />,
+    assets: [
+      { symbol: 'BTC-USD', name: 'Bitcoin', color: '#f7931a' },
+      { symbol: 'ADM', name: 'Archer Daniels Midland', color: '#0f766e' },
+      { symbol: 'DE', name: 'Deere & Co.', color: '#367C2B' },
+      { symbol: 'CTVA', name: 'Corteva', color: '#0ea5e9' },
+      { symbol: 'BG', name: 'Bunge', color: '#1d4ed8' },
+      { symbol: 'NTR', name: 'Nutrien', color: '#059669' }
+    ],
+    staticHistory: {
+      2016: { 'BTC-USD': { start: 434, end: 963 }, 'ADM': { start: 26.23, end: 34.95 }, 'DE': { start: 65.43, end: 89.51 }, 'CTVA': { start: 30.5, end: 32.1 }, 'BG': { start: 46.11, end: 55.19 }, 'NTR': { start: 34.2, end: 37.5 } },
+      2017: { 'BTC-USD': { start: 963, end: 13860 }, 'ADM': { start: 33.88, end: 31.64 }, 'DE': { start: 93.54, end: 138.87 }, 'CTVA': { start: 33.2, end: 36.7 }, 'BG': { start: 52.87, end: 52.56 }, 'NTR': { start: 35.1, end: 40.2 } },
+      2018: { 'BTC-USD': { start: 13860, end: 3740 }, 'ADM': { start: 33.9, end: 33.31 }, 'DE': { start: 148.22, end: 134.66 }, 'CTVA': { start: 36.9, end: 31.4 }, 'BG': { start: 62.23, end: 43.1 }, 'NTR': { start: 40.8, end: 44.5 } },
+      2019: { 'BTC-USD': { start: 3740, end: 7200 }, 'ADM': { start: 36.5, end: 39 }, 'DE': { start: 148.82, end: 159.43 }, 'CTVA': { start: 28.1, end: 31.9 }, 'BG': { start: 44.42, end: 48.18 }, 'NTR': { start: 44.7, end: 54.2 } },
+      2020: { 'BTC-USD': { start: 7200, end: 28990 }, 'ADM': { start: 37.66, end: 43.85 }, 'DE': { start: 146.56, end: 252.2 }, 'CTVA': { start: 26.8, end: 39.6 }, 'BG': { start: 43.89, end: 57.29 }, 'NTR': { start: 51.4, end: 54.8 } },
+      2021: { 'BTC-USD': { start: 28990, end: 46200 }, 'ADM': { start: 43.51, end: 60.22 }, 'DE': { start: 271.49, end: 324.93 }, 'CTVA': { start: 39.8, end: 45.4 }, 'BG': { start: 57.17, end: 83.57 }, 'NTR': { start: 54.9, end: 74.1 } },
+      2022: { 'BTC-USD': { start: 46200, end: 16530 }, 'ADM': { start: 66.82, end: 84.3 }, 'DE': { start: 357.77, end: 411.42 }, 'CTVA': { start: 46.2, end: 64.3 }, 'BG': { start: 88.5, end: 91.33 }, 'NTR': { start: 74.5, end: 77.6 } },
+      2023: { 'BTC-USD': { start: 16530, end: 42260 }, 'ADM': { start: 75.22, end: 67.09 }, 'DE': { start: 406.88, end: 388.54 }, 'CTVA': { start: 64.1, end: 53.7 }, 'BG': { start: 90.71, end: 94.79 }, 'NTR': { start: 77.2, end: 65.4 } },
+      2024: { 'BTC-USD': { start: 42260, end: 98000 }, 'ADM': { start: 51.63, end: 48.62 }, 'DE': { start: 383.83, end: 417.83 }, 'CTVA': { start: 47.2, end: 45.6 }, 'BG': { start: 82.72, end: 75.13 }, 'NTR': { start: 64.8, end: 68.1 } },
+      2025: { 'BTC-USD': { start: 98000, end: 87556 }, 'ADM': { start: 48.7, end: 50.1 }, 'DE': { start: 420.4, end: 389.2 }, 'CTVA': { start: 45.9, end: 42.3 }, 'BG': { start: 76.4, end: 70.8 }, 'NTR': { start: 68.5, end: 62.1 } }
+    }
+  },
+  automotive: {
+    label: 'Automotive',
+    icon: <Car className="text-red-600" />,
+    assets: [
+        { symbol: 'BTC-USD', name: 'Bitcoin', color: '#f7931a' },
+        { symbol: 'TM', name: 'Toyota', color: '#EB0A1E' },
+        { symbol: 'F', name: 'Ford', color: '#003478' },
+        { symbol: 'GM', name: 'GM', color: '#2462D1' },
+        { symbol: 'HMC', name: 'Honda', color: '#CC0000' }
+    ],
+    staticHistory: {
+        2016: { 'BTC-USD': { start: 434, end: 963 }, TM: { start: 122.5, end: 118.5 }, F: { start: 14.0, end: 12.1 }, GM: { start: 34.0, end: 34.8 }, HMC: { start: 30.5, end: 29.5 } },
+        2017: { 'BTC-USD': { start: 963, end: 13860 }, TM: { start: 118.5, end: 126.5 }, F: { start: 12.1, end: 12.5 }, GM: { start: 34.8, end: 40.9 }, HMC: { start: 29.5, end: 34.2 } },
+        2018: { 'BTC-USD': { start: 13860, end: 3740 }, TM: { start: 126.5, end: 116.0 }, F: { start: 12.5, end: 7.6 }, GM: { start: 40.9, end: 33.4 }, HMC: { start: 34.2, end: 26.3 } },
+        2019: { 'BTC-USD': { start: 3740, end: 7200 }, TM: { start: 116.0, end: 140.5 }, F: { start: 7.6, end: 9.3 }, GM: { start: 33.4, end: 36.6 }, HMC: { start: 26.3, end: 28.4 } },
+        2020: { 'BTC-USD': { start: 7200, end: 28990 }, TM: { start: 140.5, end: 154.0 }, F: { start: 9.3, end: 8.8 }, GM: { start: 36.6, end: 41.6 }, HMC: { start: 28.4, end: 29.0 } },
+        2021: { 'BTC-USD': { start: 28990, end: 46200 }, TM: { start: 154.0, end: 185.0 }, F: { start: 8.8, end: 20.8 }, GM: { start: 41.6, end: 58.6 }, HMC: { start: 29.0, end: 28.6 } },
+        2022: { 'BTC-USD': { start: 46200, end: 16530 }, TM: { start: 185.0, end: 136.5 }, F: { start: 20.8, end: 11.6 }, GM: { start: 58.6, end: 33.6 }, HMC: { start: 28.6, end: 22.6 } },
+        2023: { 'BTC-USD': { start: 16530, end: 42260 }, TM: { start: 136.5, end: 181.0 }, F: { start: 11.6, end: 12.2 }, GM: { start: 33.6, end: 35.9 }, HMC: { start: 22.6, end: 31.0 } },
+        2024: { 'BTC-USD': { start: 42260, end: 98000 }, TM: { start: 181.0, end: 200.0 }, F: { start: 12.2, end: 10.5 }, GM: { start: 35.9, end: 45.0 }, HMC: { start: 31.0, end: 33.5 } },
+        2025: { 'BTC-USD': { start: 98000, end: 87556 }, TM: { start: 200.0, end: 195.0 }, F: { start: 10.5, end: 10.0 }, GM: { start: 45.0, end: 42.0 }, HMC: { start: 33.5, end: 32.0 } }
+    }
+  },
+  energy: {
+    label: 'Energy',
+    icon: <Activity className="text-red-500" />,
+    assets: [
+      { symbol: 'BTC-USD', name: 'Bitcoin', color: '#f7931a' },
+      { symbol: 'XOM', name: 'ExxonMobil', color: '#991b1b' },
+      { symbol: 'CVX', name: 'Chevron', color: '#2563eb' },
+      { symbol: 'SHEL', name: 'Shell', color: '#facc15' },
+      { symbol: 'BP', name: 'BP plc', color: '#16a34a' },
+      { symbol: 'TTE', name: 'TotalEnergies', color: '#f97316' }
+    ],
+    staticHistory: {
+      2016: { 'BTC-USD': { start: 434, end: 963 }, 'XOM': { start: 77.8, end: 90.3 }, 'CVX': { start: 90.1, end: 118.5 }, 'SHEL': { start: 47.2, end: 55.6 }, 'BP': { start: 30.2, end: 37.1 }, 'TTE': { start: 44.7, end: 49.9 } },
+      2017: { 'BTC-USD': { start: 963, end: 13860 }, 'XOM': { start: 90.3, end: 83.6 }, 'CVX': { start: 118.5, end: 125.3 }, 'SHEL': { start: 55.6, end: 67.4 }, 'BP': { start: 37.1, end: 41.9 }, 'TTE': { start: 49.9, end: 54.6 } },
+      2018: { 'BTC-USD': { start: 13860, end: 3740 }, 'XOM': { start: 83.6, end: 68.2 }, 'CVX': { start: 125.3, end: 108.6 }, 'SHEL': { start: 67.4, end: 57.8 }, 'BP': { start: 41.9, end: 37.4 }, 'TTE': { start: 54.6, end: 48.1 } },
+      2019: { 'BTC-USD': { start: 3740, end: 7200 }, 'XOM': { start: 68.2, end: 69.2 }, 'CVX': { start: 108.6, end: 120.3 }, 'SHEL': { start: 57.8, end: 59.6 }, 'BP': { start: 37.4, end: 38.7 }, 'TTE': { start: 48.1, end: 52.4 } },
+      2020: { 'BTC-USD': { start: 7200, end: 28990 }, 'XOM': { start: 70.2, end: 41.2 }, 'CVX': { start: 119.6, end: 84.5 }, 'SHEL': { start: 59.3, end: 35.1 }, 'BP': { start: 38.1, end: 21.4 }, 'TTE': { start: 52.0, end: 41.8 } },
+      2021: { 'BTC-USD': { start: 28990, end: 46200 }, 'XOM': { start: 41.2, end: 61.2 }, 'CVX': { start: 84.5, end: 117.2 }, 'SHEL': { start: 35.1, end: 45.7 }, 'BP': { start: 21.4, end: 24.0 }, 'TTE': { start: 41.8, end: 48.6 } },
+      2022: { 'BTC-USD': { start: 46200, end: 16530 }, 'XOM': { start: 61.2, end: 110.3 }, 'CVX': { start: 117.2, end: 179.5 }, 'SHEL': { start: 45.7, end: 57.4 }, 'BP': { start: 24.0, end: 30.1 }, 'TTE': { start: 48.6, end: 63.2 } },
+      2023: { 'BTC-USD': { start: 16530, end: 42260 }, 'XOM': { start: 110.3, end: 101.2 }, 'CVX': { start: 179.5, end: 149.6 }, 'SHEL': { start: 57.4, end: 64.8 }, 'BP': { start: 30.1, end: 37.5 }, 'TTE': { start: 63.2, end: 68.7 } },
+      2024: { 'BTC-USD': { start: 42260, end: 98000 }, 'XOM': { start: 103.1, end: 118.6 }, 'CVX': { start: 152.2, end: 170.4 }, 'SHEL': { start: 65.3, end: 70.1 }, 'BP': { start: 38.2, end: 41.8 }, 'TTE': { start: 69.1, end: 72.7 } },
+      2025: { 'BTC-USD': { start: 98000, end: 87556 }, 'XOM': { start: 120.5, end: 109.2 }, 'CVX': { start: 172.1, end: 158.4 }, 'SHEL': { start: 70.8, end: 66.3 }, 'BP': { start: 42.2, end: 39.5 }, 'TTE': { start: 73.5, end: 69.8 } }
+    }
+  },
+  magnificent7: {
+    label: 'Magnificent 7',
+    icon: <LayoutDashboard className="text-cyan-400" />,
+    assets: [
+      { symbol: 'BTC-USD', name: 'Bitcoin', color: '#f7931a' },
+      { symbol: 'MSFT', name: 'Microsoft', color: '#2563eb' },
+      { symbol: 'AAPL', name: 'Apple', color: '#16a34a' },
+      { symbol: 'GOOGL', name: 'Alphabet', color: '#f97316' },
+      { symbol: 'AMZN', name: 'Amazon', color: '#a855f7' },
+      { symbol: 'META', name: 'Meta Platforms', color: '#0ea5e9' },
+      { symbol: 'NVDA', name: 'NVIDIA', color: '#22c55e' },
+      { symbol: 'TSLA', name: 'Tesla', color: '#ef4444' }
+    ],
+    staticHistory: {
+      2016: { 'BTC-USD': { start: 434, end: 963 }, 'MSFT': { start: 55.0, end: 62.0 }, 'AAPL': { start: 105, end: 115 }, 'GOOGL': { start: 758, end: 792 }, 'AMZN': { start: 656, end: 749 }, 'META': { start: 102, end: 115 }, 'NVDA': { start: 32, end: 106 }, 'TSLA': { start: 43, end: 45 } },
+      2017: { 'BTC-USD': { start: 963, end: 13860 }, 'MSFT': { start: 62, end: 85 }, 'AAPL': { start: 116, end: 170 }, 'GOOGL': { start: 792, end: 1053 }, 'AMZN': { start: 749, end: 1189 }, 'META': { start: 116, end: 176 }, 'NVDA': { start: 106, end: 193 }, 'TSLA': { start: 45, end: 62 } },
+      2018: { 'BTC-USD': { start: 13860, end: 3740 }, 'MSFT': { start: 86, end: 101 }, 'AAPL': { start: 170, end: 158 }, 'GOOGL': { start: 1053, end: 1035 }, 'AMZN': { start: 1189, end: 1501 }, 'META': { start: 176, end: 131 }, 'NVDA': { start: 193, end: 133 }, 'TSLA': { start: 62, end: 66 } },
+      2019: { 'BTC-USD': { start: 3740, end: 7200 }, 'MSFT': { start: 101, end: 157 }, 'AAPL': { start: 158, end: 293 }, 'GOOGL': { start: 1035, end: 1337 }, 'AMZN': { start: 1501, end: 1848 }, 'META': { start: 131, end: 205 }, 'NVDA': { start: 133, end: 240 }, 'TSLA': { start: 66, end: 83 } },
+      2020: { 'BTC-USD': { start: 7200, end: 28990 }, 'MSFT': { start: 158, end: 222 }, 'AAPL': { start: 293, end: 134 }, 'GOOGL': { start: 1337, end: 1752 }, 'AMZN': { start: 1848, end: 3256 }, 'META': { start: 205, end: 273 }, 'NVDA': { start: 240, end: 522 }, 'TSLA': { start: 83, end: 705 } },
+      2021: { 'BTC-USD': { start: 28990, end: 46200 }, 'MSFT': { start: 222, end: 336 }, 'AAPL': { start: 134, end: 177 }, 'GOOGL': { start: 1752, end: 2897 }, 'AMZN': { start: 3256, end: 3334 }, 'META': { start: 273, end: 336 }, 'NVDA': { start: 522, end: 294 }, 'TSLA': { start: 705, end: 352 } },
+      2022: { 'BTC-USD': { start: 46200, end: 16530 }, 'MSFT': { start: 336, end: 239 }, 'AAPL': { start: 177, end: 129 }, 'GOOGL': { start: 2897, end: 2150 }, 'AMZN': { start: 3334, end: 167 }, 'META': { start: 336, end: 120 }, 'NVDA': { start: 294, end: 146 }, 'TSLA': { start: 352, end: 123 } },
+      2023: { 'BTC-USD': { start: 16530, end: 42260 }, 'MSFT': { start: 240, end: 377 }, 'AAPL': { start: 130, end: 192 }, 'GOOGL': { start: 2150, end: 2890 }, 'AMZN': { start: 85, end: 171 }, 'META': { start: 120, end: 353 }, 'NVDA': { start: 146, end: 493 }, 'TSLA': { start: 123, end: 248 } },
+      2024: { 'BTC-USD': { start: 42260, end: 98000 }, 'MSFT': { start: 376, end: 401 }, 'AAPL': { start: 192, end: 227 }, 'GOOGL': { start: 2890, end: 3250 }, 'AMZN': { start: 171, end: 198 }, 'META': { start: 353, end: 290 }, 'NVDA': { start: 493, end: 495 }, 'TSLA': { start: 248, end: 235 } },
+      2025: { 'BTC-USD': { start: 98000, end: 87556 }, 'MSFT': { start: 402, end: 415 }, 'AAPL': { start: 229, end: 210 }, 'GOOGL': { start: 3250, end: 3125 }, 'AMZN': { start: 198, end: 205 }, 'META': { start: 290, end: 320 }, 'NVDA': { start: 495, end: 520 }, 'TSLA': { start: 235, end: 218 } }
+    }
+  },
+  macro: {
+    label: 'Macro Benchmarks',
+    icon: <BarChart3 className="text-amber-500" />,
+    assets: [
+      { symbol: 'BTC-USD', name: 'Bitcoin', color: '#f7931a' },
+      { symbol: 'SPY', name: 'S&P 500 (SPY)', color: '#10b981' },
+      { symbol: 'QQQ', name: 'Nasdaq 100 (QQQ)', color: '#3b82f6' },
+      { symbol: 'BND', name: 'Total Bond (BND)', color: '#f97316' },
+      { symbol: 'GLD', name: 'Gold (GLD)', color: '#d97706' }
+    ],
+    staticHistory: {
+      2016: { 'BTC-USD': { start: 434, end: 963 }, 'SPY': { start: 201, end: 224 }, 'QQQ': { start: 106, end: 119 }, 'BND': { start: 82, end: 81 }, 'GLD': { start: 103, end: 115 } },
+      2017: { 'BTC-USD': { start: 963, end: 13860 }, 'SPY': { start: 225, end: 266 }, 'QQQ': { start: 119, end: 156 }, 'BND': { start: 81, end: 82 }, 'GLD': { start: 115, end: 123 } },
+      2018: { 'BTC-USD': { start: 13860, end: 3740 }, 'SPY': { start: 266, end: 250 }, 'QQQ': { start: 156, end: 155 }, 'BND': { start: 82, end: 78 }, 'GLD': { start: 123, end: 118 } },
+      2019: { 'BTC-USD': { start: 3740, end: 7200 }, 'SPY': { start: 252, end: 321 }, 'QQQ': { start: 155, end: 214 }, 'BND': { start: 78, end: 84 }, 'GLD': { start: 118, end: 140 } },
+      2020: { 'BTC-USD': { start: 7200, end: 28990 }, 'SPY': { start: 323, end: 374 }, 'QQQ': { start: 214, end: 313 }, 'BND': { start: 84, end: 87 }, 'GLD': { start: 140, end: 178 } },
+      2021: { 'BTC-USD': { start: 28990, end: 46200 }, 'SPY': { start: 375, end: 477 }, 'QQQ': { start: 314, end: 400 }, 'BND': { start: 87, end: 84 }, 'GLD': { start: 178, end: 168 } },
+      2022: { 'BTC-USD': { start: 46200, end: 16530 }, 'SPY': { start: 477, end: 384 }, 'QQQ': { start: 400, end: 267 }, 'BND': { start: 84, end: 72 }, 'GLD': { start: 168, end: 168 } },
+      2023: { 'BTC-USD': { start: 16530, end: 42260 }, 'SPY': { start: 386, end: 476 }, 'QQQ': { start: 268, end: 403 }, 'BND': { start: 73, end: 74 }, 'GLD': { start: 168, end: 188 } },
+      2024: { 'BTC-USD': { start: 42260, end: 98000 }, 'SPY': { start: 478, end: 520 }, 'QQQ': { start: 404, end: 432 }, 'BND': { start: 74, end: 76 }, 'GLD': { start: 188, end: 196 } },
+      2025: { 'BTC-USD': { start: 98000, end: 87556 }, 'SPY': { start: 522, end: 507 }, 'QQQ': { start: 434, end: 420 }, 'BND': { start: 76, end: 77 }, 'GLD': { start: 197, end: 205 } }
+    }
+  },
+  utilities: {
+    label: 'Utilities & Infrastructure',
+    icon: <Anchor className="text-blue-400" />,
+    assets: [
+      { symbol: 'BTC-USD', name: 'Bitcoin', color: '#f7931a' },
+      { symbol: 'NEE', name: 'NextEra Energy', color: '#38bdf8' },
+      { symbol: 'DUK', name: 'Duke Energy', color: '#a855f7' },
+      { symbol: 'SO', name: 'Southern Company', color: '#facc15' },
+      { symbol: 'EXC', name: 'Exelon', color: '#14b8a6' },
+      { symbol: 'AWK', name: 'American Water', color: '#0ea5e9' }
+    ],
+    staticHistory: {
+      2016: { 'BTC-USD': { start: 434, end: 963 }, 'NEE': { start: 28, end: 31 }, 'DUK': { start: 71, end: 76 }, 'SO': { start: 48, end: 49 }, 'EXC': { start: 29, end: 35 }, 'AWK': { start: 65, end: 74 } },
+      2017: { 'BTC-USD': { start: 963, end: 13860 }, 'NEE': { start: 31, end: 42 }, 'DUK': { start: 76, end: 78 }, 'SO': { start: 49, end: 51 }, 'EXC': { start: 35, end: 39 }, 'AWK': { start: 74, end: 87 } },
+      2018: { 'BTC-USD': { start: 13860, end: 3740 }, 'NEE': { start: 42, end: 44 }, 'DUK': { start: 78, end: 86 }, 'SO': { start: 51, end: 47 }, 'EXC': { start: 39, end: 37 }, 'AWK': { start: 87, end: 96 } },
+      2019: { 'BTC-USD': { start: 3740, end: 7200 }, 'NEE': { start: 44, end: 57 }, 'DUK': { start: 86, end: 92 }, 'SO': { start: 47, end: 63 }, 'EXC': { start: 37, end: 45 }, 'AWK': { start: 96, end: 117 } },
+      2020: { 'BTC-USD': { start: 7200, end: 28990 }, 'NEE': { start: 57, end: 72 }, 'DUK': { start: 92, end: 87 }, 'SO': { start: 63, end: 61 }, 'EXC': { start: 45, end: 43 }, 'AWK': { start: 117, end: 151 } },
+      2021: { 'BTC-USD': { start: 28990, end: 46200 }, 'NEE': { start: 72, end: 88 }, 'DUK': { start: 87, end: 103 }, 'SO': { start: 61, end: 68 }, 'EXC': { start: 43, end: 53 }, 'AWK': { start: 151, end: 179 } },
+      2022: { 'BTC-USD': { start: 46200, end: 16530 }, 'NEE': { start: 88, end: 80 }, 'DUK': { start: 103, end: 99 }, 'SO': { start: 68, end: 70 }, 'EXC': { start: 53, end: 43 }, 'AWK': { start: 179, end: 151 } },
+      2023: { 'BTC-USD': { start: 16530, end: 42260 }, 'NEE': { start: 80, end: 72 }, 'DUK': { start: 99, end: 92 }, 'SO': { start: 70, end: 69 }, 'EXC': { start: 43, end: 39 }, 'AWK': { start: 151, end: 139 } },
+      2024: { 'BTC-USD': { start: 42260, end: 98000 }, 'NEE': { start: 72, end: 76 }, 'DUK': { start: 92, end: 94 }, 'SO': { start: 69, end: 71 }, 'EXC': { start: 39, end: 41 }, 'AWK': { start: 139, end: 142 } },
+      2025: { 'BTC-USD': { start: 98000, end: 87556 }, 'NEE': { start: 76, end: 73 }, 'DUK': { start: 94, end: 92 }, 'SO': { start: 71, end: 70 }, 'EXC': { start: 41, end: 40 }, 'AWK': { start: 142, end: 138 } }
+    }
+  },
+  defense: {
+    label: 'Defense & Aerospace',
+    icon: <ShieldCheck className="text-rose-500" />,
+    assets: [
+      { symbol: 'BTC-USD', name: 'Bitcoin', color: '#f7931a' },
+      { symbol: 'LMT', name: 'Lockheed Martin', color: '#7c3aed' },
+      { symbol: 'RTX', name: 'RTX', color: '#fb7185' },
+      { symbol: 'NOC', name: 'Northrop Grumman', color: '#0ea5e9' },
+      { symbol: 'GD', name: 'General Dynamics', color: '#22c55e' }
+    ],
+    staticHistory: {
+      2016: { 'BTC-USD': { start: 434, end: 963 }, 'LMT': { start: 212, end: 249 }, 'RTX': { start: 53, end: 64 }, 'NOC': { start: 187, end: 238 }, 'GD': { start: 140, end: 180 } },
+      2017: { 'BTC-USD': { start: 963, end: 13860 }, 'LMT': { start: 249, end: 320 }, 'RTX': { start: 64, end: 72 }, 'NOC': { start: 238, end: 308 }, 'GD': { start: 180, end: 202 } },
+      2018: { 'BTC-USD': { start: 13860, end: 3740 }, 'LMT': { start: 320, end: 278 }, 'RTX': { start: 72, end: 60 }, 'NOC': { start: 308, end: 260 }, 'GD': { start: 202, end: 170 } },
+      2019: { 'BTC-USD': { start: 3740, end: 7200 }, 'LMT': { start: 278, end: 390 }, 'RTX': { start: 60, end: 74 }, 'NOC': { start: 260, end: 374 }, 'GD': { start: 170, end: 190 } },
+      2020: { 'BTC-USD': { start: 7200, end: 28990 }, 'LMT': { start: 390, end: 356 }, 'RTX': { start: 74, end: 71 }, 'NOC': { start: 374, end: 300 }, 'GD': { start: 190, end: 149 } },
+      2021: { 'BTC-USD': { start: 28990, end: 46200 }, 'LMT': { start: 356, end: 353 }, 'RTX': { start: 71, end: 86 }, 'NOC': { start: 300, end: 390 }, 'GD': { start: 149, end: 208 } },
+      2022: { 'BTC-USD': { start: 46200, end: 16530 }, 'LMT': { start: 353, end: 488 }, 'RTX': { start: 86, end: 97 }, 'NOC': { start: 390, end: 523 }, 'GD': { start: 208, end: 247 } },
+      2023: { 'BTC-USD': { start: 16530, end: 42260 }, 'LMT': { start: 488, end: 451 }, 'RTX': { start: 97, end: 88 }, 'NOC': { start: 523, end: 470 }, 'GD': { start: 247, end: 260 } },
+      2024: { 'BTC-USD': { start: 42260, end: 98000 }, 'LMT': { start: 451, end: 470 }, 'RTX': { start: 88, end: 95 }, 'NOC': { start: 470, end: 495 }, 'GD': { start: 260, end: 285 } },
+      2025: { 'BTC-USD': { start: 98000, end: 87556 }, 'LMT': { start: 470, end: 456 }, 'RTX': { start: 95, end: 92 }, 'NOC': { start: 495, end: 482 }, 'GD': { start: 285, end: 276 } }
+    }
+  },
+  staples: {
+    label: 'Consumer Staples',
+    icon: <FileText className="text-emerald-500" />,
+    assets: [
+      { symbol: 'BTC-USD', name: 'Bitcoin', color: '#f7931a' },
+      { symbol: 'KO', name: 'Coca-Cola', color: '#ef4444' },
+      { symbol: 'PG', name: 'Procter & Gamble', color: '#1d4ed8' },
+      { symbol: 'PEP', name: 'PepsiCo', color: '#0ea5e9' },
+      { symbol: 'COST', name: 'Costco', color: '#facc15' },
+      { symbol: 'WMT', name: 'Walmart', color: '#2563eb' }
+    ],
+    staticHistory: {
+      2016: { 'BTC-USD': { start: 434, end: 963 }, 'KO': { start: 42, end: 43 }, 'PG': { start: 79, end: 84 }, 'PEP': { start: 94, end: 101 }, 'COST': { start: 150, end: 160 }, 'WMT': { start: 62, end: 69 } },
+      2017: { 'BTC-USD': { start: 963, end: 13860 }, 'KO': { start: 43, end: 46 }, 'PG': { start: 84, end: 92 }, 'PEP': { start: 101, end: 116 }, 'COST': { start: 160, end: 187 }, 'WMT': { start: 69, end: 98 } },
+      2018: { 'BTC-USD': { start: 13860, end: 3740 }, 'KO': { start: 46, end: 48 }, 'PG': { start: 92, end: 91 }, 'PEP': { start: 116, end: 110 }, 'COST': { start: 187, end: 205 }, 'WMT': { start: 98, end: 94 } },
+      2019: { 'BTC-USD': { start: 3740, end: 7200 }, 'KO': { start: 48, end: 55 }, 'PG': { start: 91, end: 125 }, 'PEP': { start: 110, end: 136 }, 'COST': { start: 205, end: 294 }, 'WMT': { start: 94, end: 118 } },
+      2020: { 'BTC-USD': { start: 7200, end: 28990 }, 'KO': { start: 55, end: 54 }, 'PG': { start: 125, end: 139 }, 'PEP': { start: 136, end: 148 }, 'COST': { start: 294, end: 377 }, 'WMT': { start: 118, end: 144 } },
+      2021: { 'BTC-USD': { start: 28990, end: 46200 }, 'KO': { start: 54, end: 60 }, 'PG': { start: 139, end: 162 }, 'PEP': { start: 148, end: 171 }, 'COST': { start: 377, end: 566 }, 'WMT': { start: 144, end: 144 } },
+      2022: { 'BTC-USD': { start: 46200, end: 16530 }, 'KO': { start: 60, end: 63 }, 'PG': { start: 162, end: 152 }, 'PEP': { start: 171, end: 182 }, 'COST': { start: 566, end: 458 }, 'WMT': { start: 144, end: 142 } },
+      2023: { 'BTC-USD': { start: 16530, end: 42260 }, 'KO': { start: 63, end: 59 }, 'PG': { start: 152, end: 151 }, 'PEP': { start: 182, end: 168 }, 'COST': { start: 458, end: 662 }, 'WMT': { start: 142, end: 156 } },
+      2024: { 'BTC-USD': { start: 42260, end: 98000 }, 'KO': { start: 59, end: 61 }, 'PG': { start: 151, end: 166 }, 'PEP': { start: 168, end: 175 }, 'COST': { start: 662, end: 720 }, 'WMT': { start: 156, end: 165 } },
+      2025: { 'BTC-USD': { start: 98000, end: 87556 }, 'KO': { start: 61, end: 60 }, 'PG': { start: 166, end: 164 }, 'PEP': { start: 175, end: 172 }, 'COST': { start: 720, end: 705 }, 'WMT': { start: 165, end: 162 } }
+    }
+  },
+  innovators: {
+    label: 'Emerging Tech Innovators',
+    icon: <TrendingUp className="text-fuchsia-400" />,
+    assets: [
+      { symbol: 'BTC-USD', name: 'Bitcoin', color: '#f7931a' },
+      { symbol: 'ASML', name: 'ASML', color: '#2563eb' },
+      { symbol: 'TSM', name: 'Taiwan Semi', color: '#10b981' },
+      { symbol: 'AVGO', name: 'Broadcom', color: '#f43f5e' },
+      { symbol: 'AMD', name: 'AMD', color: '#a855f7' },
+      { symbol: 'NOW', name: 'ServiceNow', color: '#0ea5e9' }
+    ],
+    staticHistory: {
+      2016: { 'BTC-USD': { start: 434, end: 963 }, 'ASML': { start: 90, end: 106 }, 'TSM': { start: 24, end: 28 }, 'AVGO': { start: 130, end: 173 }, 'AMD': { start: 2.8, end: 11.5 }, 'NOW': { start: 70, end: 87 } },
+      2017: { 'BTC-USD': { start: 963, end: 13860 }, 'ASML': { start: 106, end: 172 }, 'TSM': { start: 28, end: 40 }, 'AVGO': { start: 173, end: 271 }, 'AMD': { start: 11.5, end: 10.9 }, 'NOW': { start: 87, end: 129 } },
+      2018: { 'BTC-USD': { start: 13860, end: 3740 }, 'ASML': { start: 172, end: 149 }, 'TSM': { start: 40, end: 34 }, 'AVGO': { start: 271, end: 254 }, 'AMD': { start: 10.9, end: 18.0 }, 'NOW': { start: 129, end: 181 } },
+      2019: { 'BTC-USD': { start: 3740, end: 7200 }, 'ASML': { start: 149, end: 296 }, 'TSM': { start: 34, end: 58 }, 'AVGO': { start: 254, end: 318 }, 'AMD': { start: 18, end: 45 }, 'NOW': { start: 181, end: 280 } },
+      2020: { 'BTC-USD': { start: 7200, end: 28990 }, 'ASML': { start: 296, end: 401 }, 'TSM': { start: 58, end: 110 }, 'AVGO': { start: 318, end: 432 }, 'AMD': { start: 45, end: 92 }, 'NOW': { start: 280, end: 560 } },
+      2021: { 'BTC-USD': { start: 28990, end: 46200 }, 'ASML': { start: 401, end: 782 }, 'TSM': { start: 110, end: 123 }, 'AVGO': { start: 432, end: 555 }, 'AMD': { start: 92, end: 143 }, 'NOW': { start: 560, end: 658 } },
+      2022: { 'BTC-USD': { start: 46200, end: 16530 }, 'ASML': { start: 782, end: 500 }, 'TSM': { start: 123, end: 74 }, 'AVGO': { start: 555, end: 565 }, 'AMD': { start: 143, end: 64 }, 'NOW': { start: 658, end: 381 } },
+      2023: { 'BTC-USD': { start: 16530, end: 42260 }, 'ASML': { start: 505, end: 720 }, 'TSM': { start: 75, end: 124 }, 'AVGO': { start: 570, end: 1130 }, 'AMD': { start: 65, end: 140 }, 'NOW': { start: 385, end: 706 } },
+      2024: { 'BTC-USD': { start: 42260, end: 98000 }, 'ASML': { start: 725, end: 860 }, 'TSM': { start: 125, end: 140 }, 'AVGO': { start: 1140, end: 1350 }, 'AMD': { start: 142, end: 165 }, 'NOW': { start: 710, end: 780 } },
+      2025: { 'BTC-USD': { start: 98000, end: 87556 }, 'ASML': { start: 860, end: 830 }, 'TSM': { start: 140, end: 135 }, 'AVGO': { start: 1350, end: 1290 }, 'AMD': { start: 165, end: 158 }, 'NOW': { start: 780, end: 760 } }
+    }
+  },
+  commodities: {
+    label: 'Hard Commodity Operators',
+    icon: <HardHat className="text-yellow-500" />,
+    assets: [
+      { symbol: 'BTC-USD', name: 'Bitcoin', color: '#f7931a' },
+      { symbol: 'BHP', name: 'BHP', color: '#0ea5e9' },
+      { symbol: 'RIO', name: 'Rio Tinto', color: '#dc2626' },
+      { symbol: 'FCX', name: 'Freeport-McMoRan', color: '#2563eb' },
+      { symbol: 'NEM', name: 'Newmont', color: '#facc15' },
+      { symbol: 'CAT', name: 'Caterpillar', color: '#a855f7' }
+    ],
+    staticHistory: {
+      2016: { 'BTC-USD': { start: 434, end: 963 }, 'BHP': { start: 22, end: 38 }, 'RIO': { start: 23, end: 45 }, 'FCX': { start: 7, end: 13 }, 'NEM': { start: 18, end: 34 }, 'CAT': { start: 65, end: 93 } },
+      2017: { 'BTC-USD': { start: 963, end: 13860 }, 'BHP': { start: 38, end: 47 }, 'RIO': { start: 45, end: 52 }, 'FCX': { start: 13, end: 19 }, 'NEM': { start: 34, end: 37 }, 'CAT': { start: 93, end: 158 } },
+      2018: { 'BTC-USD': { start: 13860, end: 3740 }, 'BHP': { start: 47, end: 44 }, 'RIO': { start: 52, end: 44 }, 'FCX': { start: 19, end: 11 }, 'NEM': { start: 37, end: 36 }, 'CAT': { start: 158, end: 127 } },
+      2019: { 'BTC-USD': { start: 3740, end: 7200 }, 'BHP': { start: 44, end: 54 }, 'RIO': { start: 44, end: 51 }, 'FCX': { start: 11, end: 12 }, 'NEM': { start: 36, end: 45 }, 'CAT': { start: 127, end: 149 } },
+      2020: { 'BTC-USD': { start: 7200, end: 28990 }, 'BHP': { start: 54, end: 70 }, 'RIO': { start: 51, end: 75 }, 'FCX': { start: 12, end: 25 }, 'NEM': { start: 45, end: 60 }, 'CAT': { start: 149, end: 185 } },
+      2021: { 'BTC-USD': { start: 28990, end: 46200 }, 'BHP': { start: 70, end: 63 }, 'RIO': { start: 75, end: 71 }, 'FCX': { start: 25, end: 41 }, 'NEM': { start: 60, end: 62 }, 'CAT': { start: 185, end: 203 } },
+      2022: { 'BTC-USD': { start: 46200, end: 16530 }, 'BHP': { start: 63, end: 58 }, 'RIO': { start: 71, end: 62 }, 'FCX': { start: 41, end: 34 }, 'NEM': { start: 62, end: 45 }, 'CAT': { start: 203, end: 238 } },
+      2023: { 'BTC-USD': { start: 16530, end: 42260 }, 'BHP': { start: 58, end: 64 }, 'RIO': { start: 62, end: 70 }, 'FCX': { start: 34, end: 42 }, 'NEM': { start: 45, end: 42 }, 'CAT': { start: 238, end: 300 } },
+      2024: { 'BTC-USD': { start: 42260, end: 98000 }, 'BHP': { start: 64, end: 68 }, 'RIO': { start: 70, end: 73 }, 'FCX': { start: 42, end: 46 }, 'NEM': { start: 42, end: 45 }, 'CAT': { start: 300, end: 328 } },
+      2025: { 'BTC-USD': { start: 98000, end: 87556 }, 'BHP': { start: 68, end: 66 }, 'RIO': { start: 73, end: 71 }, 'FCX': { start: 46, end: 44 }, 'NEM': { start: 45, end: 43 }, 'CAT': { start: 328, end: 315 } }
+    }
+  },
+  timber: {
+    label: 'Timber & Forestry',
+    icon: <Factory className="text-amber-700" />,
+    assets: [
+      { symbol: 'BTC-USD', name: 'Bitcoin', color: '#f7931a' },
+      { symbol: 'WY', name: 'Weyerhaeuser', color: '#047857' },
+      { symbol: 'PCH', name: 'PotlatchDeltic', color: '#f97316' },
+      { symbol: 'RYN', name: 'Rayonier', color: '#0ea5e9' },
+      { symbol: 'CFPZF', name: 'Canfor', color: '#b91c1c' },
+      { symbol: 'ACA', name: 'Arcosa (Infra Timber)', color: '#7c3aed' }
+    ],
+    staticHistory: {
+      2016: { 'BTC-USD': { start: 434, end: 963 }, 'WY': { start: 27, end: 33 }, 'PCH': { start: 34, end: 39 }, 'RYN': { start: 24, end: 27 }, 'CFPZF': { start: 12, end: 18 }, 'ACA': { start: 21, end: 24 } },
+      2017: { 'BTC-USD': { start: 963, end: 13860 }, 'WY': { start: 33, end: 36 }, 'PCH': { start: 39, end: 51 }, 'RYN': { start: 27, end: 32 }, 'CFPZF': { start: 18, end: 25 }, 'ACA': { start: 24, end: 27 } },
+      2018: { 'BTC-USD': { start: 13860, end: 3740 }, 'WY': { start: 36, end: 25 }, 'PCH': { start: 51, end: 31 }, 'RYN': { start: 32, end: 27 }, 'CFPZF': { start: 25, end: 19 }, 'ACA': { start: 27, end: 24 } },
+      2019: { 'BTC-USD': { start: 3740, end: 7200 }, 'WY': { start: 25, end: 29 }, 'PCH': { start: 31, end: 40 }, 'RYN': { start: 27, end: 35 }, 'CFPZF': { start: 19, end: 21 }, 'ACA': { start: 24, end: 32 } },
+      2020: { 'BTC-USD': { start: 7200, end: 28990 }, 'WY': { start: 29, end: 31 }, 'PCH': { start: 40, end: 55 }, 'RYN': { start: 35, end: 31 }, 'CFPZF': { start: 21, end: 23 }, 'ACA': { start: 32, end: 41 } },
+      2021: { 'BTC-USD': { start: 28990, end: 46200 }, 'WY': { start: 31, end: 38 }, 'PCH': { start: 55, end: 56 }, 'RYN': { start: 31, end: 39 }, 'CFPZF': { start: 23, end: 28 }, 'ACA': { start: 41, end: 44 } },
+      2022: { 'BTC-USD': { start: 46200, end: 16530 }, 'WY': { start: 38, end: 31 }, 'PCH': { start: 56, end: 48 }, 'RYN': { start: 39, end: 34 }, 'CFPZF': { start: 28, end: 21 }, 'ACA': { start: 44, end: 38 } },
+      2023: { 'BTC-USD': { start: 16530, end: 42260 }, 'WY': { start: 31, end: 33 }, 'PCH': { start: 48, end: 52 }, 'RYN': { start: 34, end: 32 }, 'CFPZF': { start: 21, end: 19 }, 'ACA': { start: 38, end: 39 } },
+      2024: { 'BTC-USD': { start: 42260, end: 98000 }, 'WY': { start: 33, end: 35 }, 'PCH': { start: 52, end: 54 }, 'RYN': { start: 32, end: 34 }, 'CFPZF': { start: 19, end: 22 }, 'ACA': { start: 39, end: 41 } },
+      2025: { 'BTC-USD': { start: 98000, end: 87556 }, 'WY': { start: 35, end: 34 }, 'PCH': { start: 54, end: 53 }, 'RYN': { start: 34, end: 33 }, 'CFPZF': { start: 22, end: 21 }, 'ACA': { start: 41, end: 40 } }
+    }
+  },
+  banking: {
+    label: 'Banking Titans',
+    icon: <Database className="text-indigo-400" />,
+    assets: [
+      { symbol: 'BTC-USD', name: 'Bitcoin', color: '#f7931a' },
+      { symbol: 'JPM', name: 'JPMorgan Chase', color: '#1d4ed8' },
+      { symbol: 'BAC', name: 'Bank of America', color: '#16a34a' },
+      { symbol: 'WFC', name: 'Wells Fargo', color: '#dc2626' },
+      { symbol: 'C', name: 'Citigroup', color: '#0ea5e9' },
+      { symbol: 'UMBF', name: 'UMB Financial', color: '#a855f7' }
+    ],
+    staticHistory: {
+      2016: { 'BTC-USD': { start: 434, end: 963 }, 'JPM': { start: 57, end: 86 }, 'BAC': { start: 13, end: 22 }, 'WFC': { start: 50, end: 55 }, 'C': { start: 44, end: 59 }, 'UMBF': { start: 46, end: 73 } },
+      2017: { 'BTC-USD': { start: 963, end: 13860 }, 'JPM': { start: 86, end: 107 }, 'BAC': { start: 22, end: 29 }, 'WFC': { start: 55, end: 60 }, 'C': { start: 59, end: 75 }, 'UMBF': { start: 73, end: 76 } },
+      2018: { 'BTC-USD': { start: 13860, end: 3740 }, 'JPM': { start: 107, end: 97 }, 'BAC': { start: 29, end: 24 }, 'WFC': { start: 60, end: 46 }, 'C': { start: 75, end: 51 }, 'UMBF': { start: 76, end: 65 } },
+      2019: { 'BTC-USD': { start: 3740, end: 7200 }, 'JPM': { start: 97, end: 139 }, 'BAC': { start: 24, end: 35 }, 'WFC': { start: 46, end: 54 }, 'C': { start: 51, end: 79 }, 'UMBF': { start: 65, end: 73 } },
+      2020: { 'BTC-USD': { start: 7200, end: 28990 }, 'JPM': { start: 139, end: 127 }, 'BAC': { start: 35, end: 31 }, 'WFC': { start: 54, end: 29 }, 'C': { start: 79, end: 61 }, 'UMBF': { start: 73, end: 73 } },
+      2021: { 'BTC-USD': { start: 28990, end: 46200 }, 'JPM': { start: 127, end: 158 }, 'BAC': { start: 31, end: 44 }, 'WFC': { start: 29, end: 47 }, 'C': { start: 61, end: 60 }, 'UMBF': { start: 73, end: 106 } },
+      2022: { 'BTC-USD': { start: 46200, end: 16530 }, 'JPM': { start: 158, end: 134 }, 'BAC': { start: 44, end: 33 }, 'WFC': { start: 47, end: 40 }, 'C': { start: 60, end: 45 }, 'UMBF': { start: 106, end: 84 } },
+      2023: { 'BTC-USD': { start: 16530, end: 42260 }, 'JPM': { start: 134, end: 170 }, 'BAC': { start: 33, end: 33 }, 'WFC': { start: 40, end: 46 }, 'C': { start: 45, end: 52 }, 'UMBF': { start: 84, end: 97 } },
+      2024: { 'BTC-USD': { start: 42260, end: 98000 }, 'JPM': { start: 170, end: 185 }, 'BAC': { start: 33, end: 36 }, 'WFC': { start: 46, end: 48 }, 'C': { start: 52, end: 57 }, 'UMBF': { start: 97, end: 102 } },
+      2025: { 'BTC-USD': { start: 98000, end: 87556 }, 'JPM': { start: 185, end: 178 }, 'BAC': { start: 36, end: 34 }, 'WFC': { start: 48, end: 46 }, 'C': { start: 57, end: 55 }, 'UMBF': { start: 102, end: 98 } }
+    }
+  },
+  emerging: {
+    label: 'Emerging Markets',
+    icon: <Globe className="text-lime-400" />,
+    assets: [
+      { symbol: 'BTC-USD', name: 'Bitcoin', color: '#f7931a' },
+      { symbol: 'TCEHY', name: 'Tencent', color: '#2563eb' },
+      { symbol: 'BABA', name: 'Alibaba', color: '#f97316' },
+      { symbol: 'RLNIY', name: 'Reliance Industries ADR', color: '#10b981' },
+      { symbol: 'PBR', name: 'Petrobras', color: '#dc2626' },
+      { symbol: 'SSNLF', name: 'Samsung Electronics', color: '#0ea5e9' }
+    ],
+    staticHistory: {
+      2016: { 'BTC-USD': { start: 434, end: 963 }, 'TCEHY': { start: 14, end: 24 }, 'BABA': { start: 76, end: 88 }, 'RLNIY': { start: 47, end: 53 }, 'PBR': { start: 4, end: 9 }, 'SSNLF': { start: 12, end: 14 } },
+      2017: { 'BTC-USD': { start: 963, end: 13860 }, 'TCEHY': { start: 24, end: 55 }, 'BABA': { start: 88, end: 175 }, 'RLNIY': { start: 53, end: 92 }, 'PBR': { start: 9, end: 10 }, 'SSNLF': { start: 14, end: 17 } },
+      2018: { 'BTC-USD': { start: 13860, end: 3740 }, 'TCEHY': { start: 55, end: 40 }, 'BABA': { start: 175, end: 137 }, 'RLNIY': { start: 92, end: 105 }, 'PBR': { start: 10, end: 11 }, 'SSNLF': { start: 17, end: 15 } },
+      2019: { 'BTC-USD': { start: 3740, end: 7200 }, 'TCEHY': { start: 40, end: 49 }, 'BABA': { start: 137, end: 212 }, 'RLNIY': { start: 105, end: 145 }, 'PBR': { start: 11, end: 15 }, 'SSNLF': { start: 15, end: 17 } },
+      2020: { 'BTC-USD': { start: 7200, end: 28990 }, 'TCEHY': { start: 49, end: 74 }, 'BABA': { start: 212, end: 232 }, 'RLNIY': { start: 145, end: 190 }, 'PBR': { start: 15, end: 9 }, 'SSNLF': { start: 17, end: 19 } },
+      2021: { 'BTC-USD': { start: 28990, end: 46200 }, 'TCEHY': { start: 74, end: 60 }, 'BABA': { start: 232, end: 118 }, 'RLNIY': { start: 190, end: 214 }, 'PBR': { start: 9, end: 11 }, 'SSNLF': { start: 19, end: 21 } },
+      2022: { 'BTC-USD': { start: 46200, end: 16530 }, 'TCEHY': { start: 60, end: 38 }, 'BABA': { start: 118, end: 86 }, 'RLNIY': { start: 214, end: 222 }, 'PBR': { start: 11, end: 9 }, 'SSNLF': { start: 21, end: 18 } },
+      2023: { 'BTC-USD': { start: 16530, end: 42260 }, 'TCEHY': { start: 38, end: 44 }, 'BABA': { start: 86, end: 87 }, 'RLNIY': { start: 222, end: 240 }, 'PBR': { start: 9, end: 16 }, 'SSNLF': { start: 18, end: 20 } },
+      2024: { 'BTC-USD': { start: 42260, end: 98000 }, 'TCEHY': { start: 44, end: 48 }, 'BABA': { start: 87, end: 92 }, 'RLNIY': { start: 240, end: 255 }, 'PBR': { start: 16, end: 17 }, 'SSNLF': { start: 20, end: 21 } },
+      2025: { 'BTC-USD': { start: 98000, end: 87556 }, 'TCEHY': { start: 48, end: 46 }, 'BABA': { start: 92, end: 90 }, 'RLNIY': { start: 255, end: 248 }, 'PBR': { start: 17, end: 16 }, 'SSNLF': { start: 21, end: 20 } }
+    }
+  },
+  payments: {
+    label: 'Retail Payments',
+    icon: <RefreshCcw className="text-orange-400" />,
+    assets: [
+      { symbol: 'BTC-USD', name: 'Bitcoin', color: '#f7931a' },
+      { symbol: 'V', name: 'Visa', color: '#2563eb' },
+      { symbol: 'MA', name: 'Mastercard', color: '#f97316' },
+      { symbol: 'PYPL', name: 'PayPal', color: '#0ea5e9' },
+      { symbol: 'SQ', name: 'Block', color: '#22c55e' },
+      { symbol: 'ADYEY', name: 'Adyen', color: '#7c3aed' }
+    ],
+    staticHistory: {
+      2016: { 'BTC-USD': { start: 434, end: 963 }, 'V': { start: 74, end: 78 }, 'MA': { start: 93, end: 104 }, 'PYPL': { start: 31, end: 39 }, 'SQ': { start: 9, end: 14 }, 'ADYEY': { start: 13, end: 16 } },
+      2017: { 'BTC-USD': { start: 963, end: 13860 }, 'V': { start: 78, end: 114 }, 'MA': { start: 104, end: 151 }, 'PYPL': { start: 39, end: 74 }, 'SQ': { start: 14, end: 34 }, 'ADYEY': { start: 16, end: 26 } },
+      2018: { 'BTC-USD': { start: 13860, end: 3740 }, 'V': { start: 114, end: 131 }, 'MA': { start: 151, end: 188 }, 'PYPL': { start: 74, end: 83 }, 'SQ': { start: 34, end: 57 }, 'ADYEY': { start: 26, end: 22 } },
+      2019: { 'BTC-USD': { start: 3740, end: 7200 }, 'V': { start: 131, end: 187 }, 'MA': { start: 188, end: 298 }, 'PYPL': { start: 83, end: 109 }, 'SQ': { start: 57, end: 62 }, 'ADYEY': { start: 22, end: 26 } },
+      2020: { 'BTC-USD': { start: 7200, end: 28990 }, 'V': { start: 187, end: 219 }, 'MA': { start: 298, end: 337 }, 'PYPL': { start: 109, end: 234 }, 'SQ': { start: 62, end: 222 }, 'ADYEY': { start: 26, end: 44 } },
+      2021: { 'BTC-USD': { start: 28990, end: 46200 }, 'V': { start: 219, end: 217 }, 'MA': { start: 337, end: 347 }, 'PYPL': { start: 234, end: 187 }, 'SQ': { start: 222, end: 161 }, 'ADYEY': { start: 44, end: 58 } },
+      2022: { 'BTC-USD': { start: 46200, end: 16530 }, 'V': { start: 217, end: 210 }, 'MA': { start: 347, end: 347 }, 'PYPL': { start: 187, end: 70 }, 'SQ': { start: 161, end: 58 }, 'ADYEY': { start: 58, end: 21 } },
+      2023: { 'BTC-USD': { start: 16530, end: 42260 }, 'V': { start: 210, end: 260 }, 'MA': { start: 347, end: 418 }, 'PYPL': { start: 70, end: 61 }, 'SQ': { start: 58, end: 78 }, 'ADYEY': { start: 21, end: 24 } },
+      2024: { 'BTC-USD': { start: 42260, end: 98000 }, 'V': { start: 262, end: 285 }, 'MA': { start: 420, end: 445 }, 'PYPL': { start: 62, end: 72 }, 'SQ': { start: 79, end: 82 }, 'ADYEY': { start: 24, end: 26 } },
+      2025: { 'BTC-USD': { start: 98000, end: 87556 }, 'V': { start: 285, end: 276 }, 'MA': { start: 445, end: 432 }, 'PYPL': { start: 72, end: 69 }, 'SQ': { start: 82, end: 80 }, 'ADYEY': { start: 26, end: 25 } }
+    }
+  },
+  logistics: {
+    label: 'Logistics & Shipping',
+    icon: <Truck className="text-slate-300" />,
+    assets: [
+      { symbol: 'BTC-USD', name: 'Bitcoin', color: '#f7931a' },
+      { symbol: 'UPS', name: 'UPS', color: '#92400e' },
+      { symbol: 'FDX', name: 'FedEx', color: '#6d28d9' },
+      { symbol: 'UNP', name: 'Union Pacific', color: '#facc15' },
+      { symbol: 'CSX', name: 'CSX Corp', color: '#2563eb' },
+      { symbol: 'ATCO', name: 'Atlas Corp / Maersk Proxy', color: '#14b8a6' }
+    ],
+    staticHistory: {
+      2016: { 'BTC-USD': { start: 434, end: 963 }, 'UPS': { start: 102, end: 114 }, 'FDX': { start: 135, end: 186 }, 'UNP': { start: 75, end: 104 }, 'CSX': { start: 25, end: 36 }, 'ATCO': { start: 14, end: 15 } },
+      2017: { 'BTC-USD': { start: 963, end: 13860 }, 'UPS': { start: 114, end: 119 }, 'FDX': { start: 186, end: 251 }, 'UNP': { start: 104, end: 134 }, 'CSX': { start: 36, end: 50 }, 'ATCO-A': { start: 15, end: 16 } },
+      2018: { 'BTC-USD': { start: 13860, end: 3740 }, 'UPS': { start: 119, end: 97 }, 'FDX': { start: 251, end: 161 }, 'UNP': { start: 134, end: 139 }, 'CSX': { start: 50, end: 64 }, 'ATCO-A': { start: 16, end: 13 } },
+      2019: { 'BTC-USD': { start: 3740, end: 7200 }, 'UPS': { start: 97, end: 118 }, 'FDX': { start: 161, end: 150 }, 'UNP': { start: 139, end: 181 }, 'CSX': { start: 64, end: 72 }, 'ATCO-A': { start: 13, end: 14 } },
+      2020: { 'BTC-USD': { start: 7200, end: 28990 }, 'UPS': { start: 118, end: 168 }, 'FDX': { start: 150, end: 258 }, 'UNP': { start: 181, end: 206 }, 'CSX': { start: 72, end: 91 }, 'ATCO-A': { start: 14, end: 15 } },
+      2021: { 'BTC-USD': { start: 28990, end: 46200 }, 'UPS': { start: 168, end: 214 }, 'FDX': { start: 258, end: 256 }, 'UNP': { start: 206, end: 248 }, 'CSX': { start: 91, end: 105 }, 'ATCO-A': { start: 15, end: 16 } },
+      2022: { 'BTC-USD': { start: 46200, end: 16530 }, 'UPS': { start: 214, end: 178 }, 'FDX': { start: 256, end: 173 }, 'UNP': { start: 248, end: 212 }, 'CSX': { start: 105, end: 80 }, 'ATCO-A': { start: 16, end: 15 } },
+      2023: { 'BTC-USD': { start: 16530, end: 42260 }, 'UPS': { start: 178, end: 161 }, 'FDX': { start: 173, end: 280 }, 'UNP': { start: 212, end: 237 }, 'CSX': { start: 80, end: 93 }, 'ATCO-A': { start: 15, end: 16 } },
+      2024: { 'BTC-USD': { start: 42260, end: 98000 }, 'UPS': { start: 162, end: 170 }, 'FDX': { start: 280, end: 274 }, 'UNP': { start: 237, end: 248 }, 'CSX': { start: 93, end: 97 }, 'ATCO-A': { start: 16, end: 17 } },
+      2025: { 'BTC-USD': { start: 98000, end: 87556 }, 'UPS': { start: 170, end: 165 }, 'FDX': { start: 274, end: 260 }, 'UNP': { start: 248, end: 244 }, 'CSX': { start: 97, end: 95 }, 'ATCO': { start: 17, end: 16 } }
+    }
+  },
+  airlines: {
+    label: 'Airlines & Travel',
+    icon: <Activity className="text-sky-400" />,
+    assets: [
+      { symbol: 'BTC-USD', name: 'Bitcoin', color: '#f7931a' },
+      { symbol: 'DAL', name: 'Delta Air Lines', color: '#0ea5e9' },
+      { symbol: 'UAL', name: 'United Airlines', color: '#2563eb' },
+      { symbol: 'LUV', name: 'Southwest Airlines', color: '#f97316' },
+      { symbol: 'AAL', name: 'American Airlines', color: '#dc2626' },
+      { symbol: 'MAR', name: 'Marriott', color: '#a855f7' }
+    ],
+    staticHistory: {
+      2016: { 'BTC-USD': { start: 434, end: 963 }, 'DAL': { start: 49, end: 50 }, 'UAL': { start: 53, end: 72 }, 'LUV': { start: 36, end: 50 }, 'AAL': { start: 38, end: 48 }, 'MAR': { start: 72, end: 83 } },
+      2017: { 'BTC-USD': { start: 963, end: 13860 }, 'DAL': { start: 50, end: 56 }, 'UAL': { start: 72, end: 67 }, 'LUV': { start: 50, end: 65 }, 'AAL': { start: 48, end: 52 }, 'MAR': { start: 83, end: 136 } },
+      2018: { 'BTC-USD': { start: 13860, end: 3740 }, 'DAL': { start: 56, end: 49 }, 'UAL': { start: 67, end: 78 }, 'LUV': { start: 65, end: 47 }, 'AAL': { start: 52, end: 32 }, 'MAR': { start: 136, end: 110 } },
+      2019: { 'BTC-USD': { start: 3740, end: 7200 }, 'DAL': { start: 49, end: 58 }, 'UAL': { start: 78, end: 90 }, 'LUV': { start: 47, end: 54 }, 'AAL': { start: 32, end: 28 }, 'MAR': { start: 110, end: 151 } },
+      2020: { 'BTC-USD': { start: 7200, end: 28990 }, 'DAL': { start: 58, end: 40 }, 'UAL': { start: 90, end: 39 }, 'LUV': { start: 54, end: 47 }, 'AAL': { start: 28, end: 16 }, 'MAR': { start: 151, end: 133 } },
+      2021: { 'BTC-USD': { start: 28990, end: 46200 }, 'DAL': { start: 40, end: 39 }, 'UAL': { start: 39, end: 45 }, 'LUV': { start: 47, end: 44 }, 'AAL': { start: 16, end: 17 }, 'MAR': { start: 133, end: 169 } },
+      2022: { 'BTC-USD': { start: 46200, end: 16530 }, 'DAL': { start: 39, end: 33 }, 'UAL': { start: 45, end: 38 }, 'LUV': { start: 44, end: 34 }, 'AAL': { start: 17, end: 12 }, 'MAR': { start: 169, end: 150 } },
+      2023: { 'BTC-USD': { start: 16530, end: 42260 }, 'DAL': { start: 33, end: 39 }, 'UAL': { start: 38, end: 45 }, 'LUV': { start: 34, end: 29 }, 'AAL': { start: 12, end: 14 }, 'MAR': { start: 150, end: 195 } },
+      2024: { 'BTC-USD': { start: 42260, end: 98000 }, 'DAL': { start: 39, end: 41 }, 'UAL': { start: 45, end: 48 }, 'LUV': { start: 29, end: 30 }, 'AAL': { start: 14, end: 15 }, 'MAR': { start: 195, end: 210 } },
+      2025: { 'BTC-USD': { start: 98000, end: 87556 }, 'DAL': { start: 41, end: 40 }, 'UAL': { start: 48, end: 46 }, 'LUV': { start: 30, end: 31 }, 'AAL': { start: 15, end: 14 }, 'MAR': { start: 210, end: 205 } }
+    }
+  },
+  reits: {
+    label: 'Real Estate & REITs',
+    icon: <Building className="text-fuchsia-500" />,
+    assets: [
+      { symbol: 'BTC-USD', name: 'Bitcoin', color: '#f7931a' },
+      { symbol: 'AMT', name: 'American Tower', color: '#a855f7' },
+      { symbol: 'PLD', name: 'Prologis', color: '#0ea5e9' },
+      { symbol: 'SPG', name: 'Simon Property', color: '#f97316' },
+      { symbol: 'INVH', name: 'Invitation Homes', color: '#22c55e' },
+      { symbol: 'VICI', name: 'VICI Properties', color: '#facc15' }
+    ],
+    staticHistory: {
+      2016: { 'BTC-USD': { start: 434, end: 963 }, 'AMT': { start: 100, end: 106 }, 'PLD': { start: 44, end: 52 }, 'SPG': { start: 180, end: 188 }, 'INVH': { start: 19, end: 21 }, 'VICI': { start: 17, end: 19 } },
+      2017: { 'BTC-USD': { start: 963, end: 13860 }, 'AMT': { start: 106, end: 144 }, 'PLD': { start: 52, end: 65 }, 'SPG': { start: 188, end: 171 }, 'INVH': { start: 21, end: 24 }, 'VICI': { start: 19, end: 20 } },
+      2018: { 'BTC-USD': { start: 13860, end: 3740 }, 'AMT': { start: 144, end: 165 }, 'PLD': { start: 65, end: 62 }, 'SPG': { start: 171, end: 164 }, 'INVH': { start: 24, end: 21 }, 'VICI': { start: 20, end: 19 } },
+      2019: { 'BTC-USD': { start: 3740, end: 7200 }, 'AMT': { start: 165, end: 237 }, 'PLD': { start: 62, end: 86 }, 'SPG': { start: 164, end: 147 }, 'INVH': { start: 21, end: 29 }, 'VICI': { start: 19, end: 24 } },
+      2020: { 'BTC-USD': { start: 7200, end: 28990 }, 'AMT': { start: 237, end: 228 }, 'PLD': { start: 86, end: 99 }, 'SPG': { start: 147, end: 89 }, 'INVH': { start: 29, end: 30 }, 'VICI': { start: 24, end: 27 } },
+      2021: { 'BTC-USD': { start: 28990, end: 46200 }, 'AMT': { start: 228, end: 270 }, 'PLD': { start: 99, end: 160 }, 'SPG': { start: 89, end: 155 }, 'INVH': { start: 30, end: 41 }, 'VICI': { start: 27, end: 31 } },
+      2022: { 'BTC-USD': { start: 46200, end: 16530 }, 'AMT': { start: 270, end: 216 }, 'PLD': { start: 160, end: 112 }, 'SPG': { start: 155, end: 116 }, 'INVH': { start: 41, end: 33 }, 'VICI': { start: 31, end: 32 } },
+      2023: { 'BTC-USD': { start: 16530, end: 42260 }, 'AMT': { start: 216, end: 217 }, 'PLD': { start: 112, end: 127 }, 'SPG': { start: 116, end: 147 }, 'INVH': { start: 33, end: 34 }, 'VICI': { start: 32, end: 32 } },
+      2024: { 'BTC-USD': { start: 42260, end: 98000 }, 'AMT': { start: 217, end: 233 }, 'PLD': { start: 127, end: 132 }, 'SPG': { start: 147, end: 156 }, 'INVH': { start: 34, end: 35 }, 'VICI': { start: 32, end: 33 } },
+      2025: { 'BTC-USD': { start: 98000, end: 87556 }, 'AMT': { start: 233, end: 225 }, 'PLD': { start: 132, end: 129 }, 'SPG': { start: 156, end: 152 }, 'INVH': { start: 35, end: 34 }, 'VICI': { start: 33, end: 33 } }
+    }
+  },
+  miners: {
+    label: 'Bitcoin Miners',
+    icon: <HardHat className="text-amber-400" />,
+    assets: [
+      { symbol: 'BTC-USD', name: 'Bitcoin', color: '#f7931a' },
+      { symbol: 'RIOT', name: 'Riot Platforms', color: '#0ea5e9' },
+      { symbol: 'MARA', name: 'Marathon Digital', color: '#22c55e' },
+      { symbol: 'CIFR', name: 'Cipher Mining', color: '#a855f7' },
+      { symbol: 'HIVE', name: 'HIVE Digital', color: '#facc15' },
+      { symbol: 'HUT', name: 'Hut 8 Mining', color: '#ef4444' }
+    ],
+    staticHistory: {
+      2016: { 'BTC-USD': { start: 434, end: 963 }, 'RIOT': { start: 2.7, end: 3.8 }, 'MARA': { start: 2.6, end: 6.2 }, 'CIFR': { start: 7.4, end: 5.9 }, 'HIVE': { start: 1.2, end: 1.5 }, 'HUT': { start: 1.4, end: 2.0 } },
+      2017: { 'BTC-USD': { start: 963, end: 13860 }, 'RIOT': { start: 3.8, end: 23 }, 'MARA': { start: 6.2, end: 10.4 }, 'CIFR': { start: 5.9, end: 2.8 }, 'HIVE': { start: 1.5, end: 4.0 }, 'HUT': { start: 2.0, end: 5.2 } },
+      2018: { 'BTC-USD': { start: 13860, end: 3740 }, 'RIOT': { start: 23, end: 2.7 }, 'MARA': { start: 10.4, end: 1.5 }, 'CIFR': { start: 2.8, end: 1.6 }, 'HIVE': { start: 4.0, end: 0.7 }, 'HUT': { start: 5.2, end: 0.9 } },
+      2019: { 'BTC-USD': { start: 3740, end: 7200 }, 'RIOT': { start: 2.7, end: 1.7 }, 'MARA': { start: 1.5, end: 0.5 }, 'CIFR': { start: 1.6, end: 1.3 }, 'HIVE': { start: 0.7, end: 0.5 }, 'HUT': { start: 0.9, end: 1.2 } },
+      2020: { 'BTC-USD': { start: 7200, end: 28990 }, 'RIOT': { start: 1.7, end: 16.5 }, 'MARA': { start: 0.5, end: 10.5 }, 'CIFR': { start: 1.3, end: 2.7 }, 'HIVE': { start: 0.5, end: 2.2 }, 'HUT': { start: 1.2, end: 4.5 } },
+      2021: { 'BTC-USD': { start: 28990, end: 46200 }, 'RIOT': { start: 16.5, end: 23.0 }, 'MARA': { start: 10.5, end: 33.5 }, 'CIFR': { start: 2.7, end: 7.1 }, 'HIVE': { start: 2.2, end: 3.9 }, 'HUT': { start: 4.5, end: 8.4 } },
+      2022: { 'BTC-USD': { start: 46200, end: 16530 }, 'RIOT': { start: 23.0, end: 3.3 }, 'MARA': { start: 33.5, end: 3.8 }, 'CIFR': { start: 7.1, end: 0.9 }, 'HIVE': { start: 3.9, end: 1.6 }, 'HUT': { start: 8.4, end: 1.9 } },
+      2023: { 'BTC-USD': { start: 16530, end: 42260 }, 'RIOT': { start: 3.3, end: 15.8 }, 'MARA': { start: 3.8, end: 21.5 }, 'CIFR': { start: 0.9, end: 3.3 }, 'HIVE': { start: 1.6, end: 4.9 }, 'HUT': { start: 1.9, end: 9.2 } },
+      2024: { 'BTC-USD': { start: 42260, end: 98000 }, 'RIOT': { start: 15.8, end: 16.9 }, 'MARA': { start: 21.5, end: 20.2 }, 'CIFR': { start: 3.3, end: 4.2 }, 'HIVE': { start: 4.9, end: 5.1 }, 'HUT': { start: 9.2, end: 10.5 } },
+      2025: { 'BTC-USD': { start: 98000, end: 87556 }, 'RIOT': { start: 16.9, end: 14.7 }, 'MARA': { start: 20.2, end: 18.4 }, 'CIFR': { start: 4.2, end: 3.8 }, 'HIVE': { start: 5.1, end: 4.6 }, 'HUT': { start: 10.5, end: 9.8 } }
+    }
+  },
+  treasuries: {
+    label: 'Bitcoin Treasuries',
+    icon: <Database className="text-amber-500" />,
+    assets: [
+      { symbol: 'BTC-USD', name: 'Bitcoin', color: '#f7931a' },
+      { symbol: 'MSTR', name: 'MicroStrategy', color: '#ef4444' },
+      { symbol: 'TSLA', name: 'Tesla', color: '#22c55e' },
+      { symbol: 'SQ', name: 'Block', color: '#0ea5e9' },
+      { symbol: 'MUFG', name: 'Metaplanet (Proxy)', color: '#a855f7' },
+      { symbol: 'COIN', name: 'Coinbase', color: '#f97316' }
+    ],
+    staticHistory: {
+      2016: { 'BTC-USD': { start: 434, end: 963 }, 'MSTR': { start: 16.7, end: 19.1 }, 'TSLA': { start: 43, end: 45 }, 'SQ': { start: 9, end: 14 }, 'MUFG': { start: 6, end: 7 }, 'COIN': { start: 45, end: 50 } },
+      2017: { 'BTC-USD': { start: 963, end: 13860 }, 'MSTR': { start: 19.1, end: 13.1 }, 'TSLA': { start: 45, end: 62 }, 'SQ': { start: 14, end: 34 }, 'MUFG': { start: 7, end: 9 }, 'COIN': { start: 50, end: 64 } },
+      2018: { 'BTC-USD': { start: 13860, end: 3740 }, 'MSTR': { start: 13.1, end: 13.5 }, 'TSLA': { start: 62, end: 66 }, 'SQ': { start: 34, end: 57 }, 'MUFG': { start: 9, end: 8 }, 'COIN': { start: 64, end: 50 } },
+      2019: { 'BTC-USD': { start: 3740, end: 7200 }, 'MSTR': { start: 13.5, end: 15.5 }, 'TSLA': { start: 66, end: 83 }, 'SQ': { start: 57, end: 62 }, 'MUFG': { start: 8, end: 7 }, 'COIN': { start: 50, end: 72 } },
+      2020: { 'BTC-USD': { start: 7200, end: 28990 }, 'MSTR': { start: 15.5, end: 42.5 }, 'TSLA': { start: 83, end: 705 }, 'SQ': { start: 62, end: 222 }, 'MUFG': { start: 7, end: 10 }, 'COIN': { start: 72, end: 180 } },
+      2021: { 'BTC-USD': { start: 28990, end: 46200 }, 'MSTR': { start: 42.5, end: 57.3 }, 'TSLA': { start: 705, end: 352 }, 'SQ': { start: 222, end: 161 }, 'MUFG': { start: 10, end: 12 }, 'COIN': { start: 180, end: 252 } },
+      2022: { 'BTC-USD': { start: 46200, end: 16530 }, 'MSTR': { start: 57.3, end: 20.6 }, 'TSLA': { start: 352, end: 123 }, 'SQ': { start: 161, end: 58 }, 'MUFG': { start: 12, end: 9 }, 'COIN': { start: 252, end: 35 } },
+      2023: { 'BTC-USD': { start: 16530, end: 42260 }, 'MSTR': { start: 20.6, end: 69 }, 'TSLA': { start: 123, end: 248 }, 'SQ': { start: 58, end: 78 }, 'MUFG': { start: 9, end: 11 }, 'COIN': { start: 35, end: 140 } },
+      2024: { 'BTC-USD': { start: 42260, end: 98000 }, 'MSTR': { start: 69, end: 135 }, 'TSLA': { start: 248, end: 235 }, 'SQ': { start: 78, end: 82 }, 'MUFG': { start: 11, end: 13 }, 'COIN': { start: 140, end: 170 } },
+      2025: { 'BTC-USD': { start: 98000, end: 87556 }, 'MSTR': { start: 300.01, end: 172.19 }, 'TSLA': { start: 235, end: 218 }, 'SQ': { start: 82, end: 80 }, 'MUFG': { start: 13, end: 12 }, 'COIN': { start: 170, end: 160 } }
+    }
+  }
 };
 
 // --- 2. HELPERS ---
 
-const calculateFairPrice = (days: number) => days <= 0 ? 0 : MODEL_COEFF * Math.pow(days, MODEL_EXPONENT);
-const formatPrice = (val: number | null | undefined) => {
-  if (val === null || val === undefined) return '-';
-  return val > 1000 ? `$${val.toLocaleString(undefined, {maximumFractionDigits: 0})}` : `$${val.toFixed(2)}`;
-};
-const formatCurrency = (val: number) => val >= 1000000 ? `$${(val / 1000000).toFixed(1)}M` : val >= 1000 ? `$${(val / 1000).toFixed(0)}k` : `$${val.toFixed(0)}`;
+const calculateFairPrice = (days) => days <= 0 ? 0 : MODEL_COEFF * Math.pow(days, MODEL_EXPONENT);
+const formatPrice = (val) => !val ? '-' : val > 1000 ? `$${val.toLocaleString(undefined, {maximumFractionDigits: 0})}` : `$${val.toFixed(2)}`;
+const formatCurrency = (val) => val >= 1000000 ? `$${(val / 1000000).toFixed(1)}M` : val >= 1000 ? `$${(val / 1000).toFixed(0)}k` : `$${val.toFixed(0)}`;
 
-const fetchWithRetry = async (url: string, maxRetries = 3, initialDelay = 1000) => {
+const fetchWithRetry = async (url, maxRetries = 3, initialDelay = 1000) => {
     let delay = initialDelay;
     for (let i = 0; i < maxRetries; i++) {
         try {
@@ -81,17 +546,16 @@ const fetchWithRetry = async (url: string, maxRetries = 3, initialDelay = 1000) 
     }
 };
 
-// --- 3. BASE COMPONENTS ---
+const downsampleSeries = (data, step = 1) => {
+  if (step <= 1) return data;
+  return data.filter((_, idx) => idx % step === 0 || idx === data.length - 1);
+};
 
-interface ButtonProps {
-  children: React.ReactNode;
-  variant?: "primary" | "secondary" | "outline";
-  className?: string;
-  onClick?: () => void;
-}
 
-const Button = ({ children, variant = "primary", className = "", onClick }: ButtonProps) => {
-  const baseStyle = "inline-flex items-center justify-center px-6 py-3 border text-base font-medium rounded-sm transition-all duration-200 shadow-sm cursor-pointer";
+// --- 3. BASE COMPONENTS (Defined first to avoid ReferenceError) ---
+
+const Button = ({ children, variant = "primary", className = "", onClick }) => {
+  const baseStyle = "inline-flex items-center justify-center px-6 py-3 border text-base font-medium rounded-sm transition-all duration-200 shadow-sm";
   const variants = {
     primary: "border-transparent text-slate-900 bg-amber-500 hover:bg-amber-400 focus:ring-2 focus:ring-offset-2 focus:ring-amber-500",
     secondary: "border-slate-600 text-slate-200 bg-transparent hover:bg-slate-800 hover:border-slate-500 focus:ring-2 focus:ring-offset-2 focus:ring-slate-500",
@@ -105,7 +569,7 @@ const Button = ({ children, variant = "primary", className = "", onClick }: Butt
   );
 };
 
-const Section = ({ children, className = "", id = "" }: { children: React.ReactNode; className?: string; id?: string }) => (
+const Section = ({ children, className = "", id = "" }) => (
   <div id={id} className={`py-20 px-4 sm:px-6 lg:px-8 ${className}`}>
     <div className="max-w-7xl mx-auto">
       {children}
@@ -113,7 +577,7 @@ const Section = ({ children, className = "", id = "" }: { children: React.ReactN
   </div>
 );
 
-const SectionTitle = ({ title, subtitle, light = false }: { title: string; subtitle?: boolean; light?: boolean }) => (
+const SectionTitle = ({ title, subtitle, light = false }) => (
   <div className="mb-12">
     <h2 className={`text-3xl font-bold tracking-tight sm:text-4xl ${light ? 'text-white' : 'text-slate-900'}`}>
       {title}
@@ -124,14 +588,7 @@ const SectionTitle = ({ title, subtitle, light = false }: { title: string; subti
   </div>
 );
 
-interface ImageFallbackProps {
-  src: string;
-  fallback: string;
-  alt: string;
-  className?: string;
-}
-
-const ImageWithFallback = ({ src, fallback, alt, className }: ImageFallbackProps) => {
+const ImageWithFallback = ({ src, fallback, alt, className }) => {
   const [imgSrc, setImgSrc] = useState(src);
   return (
     <img 
@@ -145,17 +602,12 @@ const ImageWithFallback = ({ src, fallback, alt, className }: ImageFallbackProps
 
 // --- 4. LAYOUT COMPONENTS ---
 
-interface NavProps {
-  currentView: string;
-  setView: (view: string) => void;
-}
-
-const Navbar = ({ currentView, setView }: NavProps) => {
+const Navbar = ({ currentView, setView }) => {
   const [isOpen, setIsOpen] = useState(false);
   const navLinks = [
     { label: 'Home', view: 'home' },
-    { label: 'About This Project', view: 'executives' },
     { label: 'Data & Models', view: 'data' },
+    { label: 'About This Project', view: 'executives' },
     { label: 'FAQ', view: 'home', section: 'faq' },
   ];
 
@@ -253,7 +705,7 @@ const Footer = () => (
 
 // --- 5. PAGE VIEWS ---
 
-const HomeView = ({ setView }: NavProps) => (
+const HomeView = ({ setView }) => (
   <>
     <div className="relative bg-slate-900 overflow-hidden min-h-[600px] flex items-center">
       <div className="absolute inset-0">
@@ -467,7 +919,7 @@ const HomeView = ({ setView }: NavProps) => (
   </>
 );
 
-const ExecutivesView = ({ setView }: NavProps) => (
+const ExecutivesView = ({ setView }) => (
   <>
     <div className="bg-slate-900 py-24 border-b border-slate-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
@@ -482,7 +934,7 @@ const ExecutivesView = ({ setView }: NavProps) => (
         </p>
         <div className="flex flex-col sm:flex-row justify-center gap-4">
           <Button onClick={() => setView('data')}>View the Models & Dashboards</Button>
-          <Button variant="secondary" onClick={() => document.getElementById('exec-overview')?.scrollIntoView({behavior:'smooth'})}>
+          <Button variant="secondary" onClick={() => document.getElementById('exec-overview').scrollIntoView({behavior:'smooth'})}>
             Read the Executive Overview
           </Button>
         </div>
@@ -621,29 +1073,33 @@ const ExecutivesView = ({ setView }: NavProps) => (
 );
 
 const DataModelsView = () => {
+  const hasCachedPowerLaw = Array.isArray(POWER_LAW_CACHE.data) && POWER_LAW_CACHE.data.length > 0;
+  const cachedStats = POWER_LAW_CACHE.stats;
+  const cacheIsFresh = hasCachedPowerLaw && (Date.now() - POWER_LAW_CACHE.fetchedAt) < CACHE_TTL_MS;
   const [activeTab, setActiveTab] = useState('powerLaw'); 
-  const [plData, setPlData] = useState<any[]>([]);
-  const [plLoading, setPlLoading] = useState(true);
-  const [plError, setPlError] = useState<string | null>(null);
-  const [plDataSource, setPlDataSource] = useState('Initializing...');
-  const [compData, setCompData] = useState<any[]>([]);
+  const [activeSector, setActiveSector] = useState<keyof typeof SECTORS>('chemicals');
+  const [plData, setPlData] = useState(POWER_LAW_CACHE.data || []);
+  const [plLoading, setPlLoading] = useState(!hasCachedPowerLaw);
+  const [plError, setPlError] = useState(null);
+  const [plDataSource, setPlDataSource] = useState(cachedStats ? `${cachedStats.dataSource}${cacheIsFresh ? ' (cached)' : ''}` : 'Initializing...');
+  const [compData, setCompData] = useState([]);
   const [compLoading, setCompLoading] = useState(false);
-  const [compError, setCompError] = useState<string | null>(null);
-  const [scoreboard, setScoreboard] = useState<any[]>([]); 
-  const [yScale, setYScale] = useState<'log' | 'linear'>('log');
+  const [compError, setCompError] = useState(null);
+  const [scoreboard, setScoreboard] = useState([]); 
+  const [yScale, setYScale] = useState('log');
   const [xScale, setXScale] = useState('date');
-  const [currentPrice, setCurrentPrice] = useState<number | null>(null);
-  const [currentFairPrice, setCurrentFairPrice] = useState<number | null>(null);
-  const [stdDev, setStdDev] = useState(0);
-  const [rSquared, setRSquared] = useState(0);
+  const [currentPrice, setCurrentPrice] = useState(cachedStats?.currentPrice || null);
+  const [currentFairPrice, setCurrentFairPrice] = useState(cachedStats?.currentFairPrice || null);
+  const [stdDev, setStdDev] = useState(cachedStats?.stdDev || 0);
+  const [rSquared, setRSquared] = useState(cachedStats?.rSquared || 0);
 
-  const formatXAxis = (val: number) => {
+  const formatXAxis = (val) => {
     if (xScale === 'date') return new Date(val).getFullYear().toString();
     const date = new Date(GENESIS_DATE + val * ONE_DAY_MS);
     return date.getFullYear().toString();
   };
 
-  const formatTooltipDate = (label: number) => {
+  const formatTooltipDate = (label) => {
     const date = xScale === 'date' ? new Date(label) : new Date(GENESIS_DATE + label * ONE_DAY_MS);
     return date.toLocaleDateString();
   };
@@ -652,10 +1108,10 @@ const DataModelsView = () => {
   const fetchCoinCapData = async () => {
       const json = await fetchWithRetry('https://api.coincap.io/v2/assets/bitcoin/history?interval=d1');
       if (!json.data) throw new Error('Invalid CoinCap Data');
-      return json.data.map((d: any) => ({ date: d.time, price: parseFloat(d.priceUsd) }));
+      return json.data.map(d => ({ date: d.time, price: parseFloat(d.priceUsd) }));
   };
 
-  const fetchYahooData = async (symbol: string, interval = '1d', range = 'max') => {
+  const fetchYahooData = async (symbol, interval = '1d', range = 'max') => {
     const yahooUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?range=${range}&interval=${interval}&_=${new Date().getTime()}`;
     const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(yahooUrl)}`;
     const response = await fetch(proxyUrl);
@@ -668,12 +1124,36 @@ const DataModelsView = () => {
     const timestamps = result.timestamp || [];
     const quotes = result.indicators.quote[0].close || [];
     const adjClose = result.indicators.adjclose?.[0]?.adjclose || quotes;
-    return timestamps.map((ts: number, index: number) => ({ date: ts * 1000, price: adjClose[index] }));
+    return timestamps.map((ts, index) => ({ date: ts * 1000, price: adjClose[index] }));
   };
 
   const fetchCoinGeckoData = async () => {
     const json = await fetchWithRetry('https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=max&interval=daily');
-    return json.prices.map(([ts, price]: [number, number]) => ({ date: ts, price: price }));
+    return json.prices.map(([ts, price]) => ({ date: ts, price: price }));
+  };
+
+  const fetchFromSource = (label, runner) => runner().then(data => ({ source: label, data }));
+
+  const fetchBestDataSource = () => Promise.any([
+    fetchFromSource('CoinCap API', fetchCoinCapData),
+    fetchFromSource('Yahoo Finance', () => fetchYahooData('BTC-USD')),
+    fetchFromSource('CoinGecko', fetchCoinGeckoData)
+  ]);
+
+  const hydrateFromCache = (labelSuffix = ' (cached)') => {
+    if (!POWER_LAW_CACHE.data) return false;
+    setPlData(POWER_LAW_CACHE.data);
+    if (POWER_LAW_CACHE.stats) {
+      const stats = POWER_LAW_CACHE.stats;
+      setStdDev(stats.stdDev);
+      setRSquared(stats.rSquared);
+      setCurrentPrice(stats.currentPrice);
+      setCurrentFairPrice(stats.currentFairPrice);
+      setPlDataSource(`${stats.dataSource}${labelSuffix}`);
+    } else {
+      setPlDataSource('Cached');
+    }
+    return true;
   };
 
   const loadPlDemoData = () => {
@@ -699,7 +1179,7 @@ const DataModelsView = () => {
         price: simulatedPrice,
         fairPrice: fair,
         daysSinceGenesis: i,
-        upperBand: fair * Math.exp(2 * fakeStdDev),
+        upperBand: fair * Math.exp(3 * fakeStdDev),
         lowerBand: fair * Math.exp(-1 * fakeStdDev)
       });
     }
@@ -712,31 +1192,29 @@ const DataModelsView = () => {
   };
 
   const fetchPowerLawData = async () => {
+    const isCacheFresh = POWER_LAW_CACHE.data && (Date.now() - POWER_LAW_CACHE.fetchedAt) < CACHE_TTL_MS;
+    if (isCacheFresh) {
+      hydrateFromCache(' (cached)');
+      setPlError(null);
+      setPlLoading(false);
+      return;
+    }
+
     setPlLoading(true);
     setPlError(null);
-    let rawPoints: any[] = [];
-    let sourceName = '';
+    if (POWER_LAW_CACHE.data && !isCacheFresh) {
+      hydrateFromCache(' (stale)');
+    }
 
     try {
-      try {
-         sourceName = 'CoinCap API';
-         rawPoints = await fetchCoinCapData();
-      } catch (ccErr) {
-         try {
-           sourceName = 'Yahoo Finance';
-           rawPoints = await fetchYahooData('BTC-USD');
-         } catch (yahooErr) {
-             sourceName = 'CoinGecko';
-             rawPoints = await fetchCoinGeckoData();
-         }
-      }
+      const { source: sourceName, data: rawPoints } = await fetchBestDataSource();
 
       let processedData = rawPoints.map(pt => {
         if (pt.price === null || pt.price === undefined) return null;
         const daysSinceGenesis = (pt.date - GENESIS_DATE) / ONE_DAY_MS;
         const fairPrice = daysSinceGenesis > 0 ? calculateFairPrice(daysSinceGenesis) : 0;
         return { date: pt.date, price: pt.price, fairPrice, daysSinceGenesis };
-      }).filter((d): d is { date: number; price: number; fairPrice: number; daysSinceGenesis: number } => d !== null && d.price > 0 && d.fairPrice > 0 && d.daysSinceGenesis > 1);
+      }).filter(d => d !== null && d.price > 0 && d.fairPrice > 0 && d.daysSinceGenesis > 1);
 
       if (processedData.length === 0) throw new Error('No valid data');
 
@@ -744,8 +1222,8 @@ const DataModelsView = () => {
       const meanResidual = logResiduals.reduce((sum, val) => sum + val, 0) / logResiduals.length;
       const squaredDiffs = logResiduals.map(val => Math.pow(val - meanResidual, 2));
       const variance = squaredDiffs.reduce((sum, val) => sum + val, 0) / squaredDiffs.length;
-      
-      setStdDev(Math.sqrt(variance));
+      const newStdDev = Math.sqrt(variance);
+      setStdDev(newStdDev);
       setPlDataSource(sourceName);
 
       const lastPoint = processedData[processedData.length - 1];
@@ -763,35 +1241,63 @@ const DataModelsView = () => {
         nextDateMs += ONE_DAY_MS;
       }
 
-      const combined = [...processedData, ...futureData].map(d => ({
+      const combinedFull = [...processedData, ...futureData].map(d => ({
         ...d,
-        upperBand: d.fairPrice * Math.exp(2 * Math.sqrt(variance)), 
-        lowerBand: d.fairPrice * Math.exp(-1 * Math.sqrt(variance)),
+        upperBand: d.fairPrice * Math.exp(3 * newStdDev), 
+        lowerBand: d.fairPrice * Math.exp(-1 * newStdDev),
       }));
+
+      const combined = downsampleSeries(combinedFull, POWER_LAW_DOWNSAMPLE_STEP);
 
       const logActuals = processedData.map(d => Math.log(d.price));
       const meanLogActual = logActuals.reduce((a, b) => a + b, 0) / logActuals.length;
       const ssTot = logActuals.reduce((acc, val) => acc + Math.pow(val - meanLogActual, 2), 0);
       const ssRes = processedData.reduce((acc, d) => acc + Math.pow(Math.log(d.price) - Math.log(d.fairPrice), 2), 0);
-      setRSquared(1 - (ssRes / ssTot));
+      const newRSquared = 1 - (ssRes / ssTot);
+      setRSquared(newRSquared);
+
+      POWER_LAW_CACHE.data = combined;
+      POWER_LAW_CACHE.stats = {
+        stdDev: newStdDev,
+        rSquared: newRSquared,
+        currentPrice: lastPoint.price,
+        currentFairPrice: lastPoint.fairPrice,
+        dataSource: sourceName,
+      };
+      POWER_LAW_CACHE.fetchedAt = Date.now();
 
       setPlData(combined);
 
     } catch (err) {
-      setPlError(`Live data unavailable. Using simulated data.`);
-      setPlDataSource('Demo Data (Simulation)');
-      loadPlDemoData();
+      console.error(err);
+      const hasBackup = Array.isArray(POWER_LAW_CACHE.data) && POWER_LAW_CACHE.data.length > 0;
+      if (hasBackup) {
+        setPlError(`Live data unavailable. Showing last cached data.`);
+        hydrateFromCache(' (cached)');
+      } else {
+        setPlError(`Live data unavailable. Using simulated data.`);
+        setPlDataSource('Demo Data (Simulation)');
+        loadPlDemoData();
+      }
     } finally {
       setPlLoading(false);
     }
   };
 
   const fetchComparisonData = async () => {
-    if (compData.length > 0) return; 
+    const sectorConfig = SECTORS[activeSector];
+    if (!sectorConfig) return;
+
     setCompLoading(true);
     setCompError(null);
     try {
-      processComparisonData(STATIC_HISTORY);
+      const historyData: Record<number, Record<string, any>> = sectorConfig.staticHistory 
+        ? JSON.parse(JSON.stringify(sectorConfig.staticHistory)) 
+        : {};
+
+      const result = processComparisonData(historyData, sectorConfig.assets);
+      setCompData(result.years);
+      setScoreboard(result.scoreboard);
     } catch (err) {
       setCompError("Failed to load comparison data.");
     } finally {
@@ -799,17 +1305,17 @@ const DataModelsView = () => {
     }
   };
 
-  const processComparisonData = (historyData: Record<number, Record<string, { start: number; end: number } | null>>) => {
-      const years: any[] = [];
-      const wins: Record<string, number> = {};
-      ASSETS.forEach(a => wins[a.symbol] = 0);
+  const processComparisonData = (historyData: Record<number, Record<string, any>>, assets: typeof SECTORS['chemicals']['assets']) => {
+      const years = [];
+      const wins = {};
+      assets.forEach(a => wins[a.symbol] = 0);
       
       for (let year = START_YEAR; year <= 2025; year++) {
-          const yearReturns: any[] = [];
+          const yearReturns = [];
           const yearData = historyData[year];
 
           if (yearData) {
-              ASSETS.forEach(asset => {
+              assets.forEach(asset => {
                   const stats = yearData[asset.symbol];
                   if (!stats) {
                       yearReturns.push({ ...asset, value: null, startPrice: null, endPrice: null });
@@ -832,45 +1338,36 @@ const DataModelsView = () => {
           }
       }
 
-      const calculateStats = (symbol: string) => {
-          const getPrice = (year: number, type: 'start' | 'end') => historyData[year] ? historyData[year][symbol]?.[type] : null;
+      const calculateStats = (symbol) => {
+          const getPrice = (year, type) => historyData[year] ? historyData[year][symbol]?.[type] : null;
           const currentEnd = getPrice(2025, 'end');
-          
-          if (!currentEnd) return { cagr2: null, cagr3: null, cagr5: null, cagr10: null, label10: "10Y", totalReturn: null };
-
           const p2 = getPrice(2023, 'end');
-          const cagr2 = p2 ? (Math.pow(currentEnd / p2, 1/2) - 1) * 100 : null;
-          
+          const cagr2 = (p2 && currentEnd) ? (Math.pow(currentEnd / p2, 1/2) - 1) * 100 : null;
           const p3 = getPrice(2022, 'end');
-          const cagr3 = p3 ? (Math.pow(currentEnd / p3, 1/3) - 1) * 100 : null;
-          
+          const cagr3 = (p3 && currentEnd) ? (Math.pow(currentEnd / p3, 1/3) - 1) * 100 : null;
           const p5 = getPrice(2020, 'end');
-          const cagr5 = p5 ? (Math.pow(currentEnd / p5, 1/5) - 1) * 100 : null;
-
+          const cagr5 = (p5 && currentEnd) ? (Math.pow(currentEnd / p5, 1/5) - 1) * 100 : null;
           let startYear10 = 2016;
           let years10 = 10;
           let label10 = "10Y";
           if (symbol === 'DOW') { startYear10 = 2019; years10 = 2025 - 2019 + 1; label10 = "6Y"; }
-          
           const p10 = getPrice(startYear10, 'start');
-          const cagr10 = p10 ? (Math.pow(currentEnd / p10, 1/years10) - 1) * 100 : null;
-          const totalReturn = p10 ? ((currentEnd - p10) / p10) * 100 : null;
-          
+          const cagr10 = (p10 && currentEnd) ? (Math.pow(currentEnd / p10, 1/years10) - 1) * 100 : null;
+          const totalReturn = (p10 && currentEnd) ? ((currentEnd - p10) / p10) * 100 : null;
           return { cagr2, cagr3, cagr5, cagr10, label10, totalReturn };
       };
 
       const sortedScoreboard = Object.entries(wins).map(([symbol, count]) => {
-            const asset = ASSETS.find(a => a.symbol === symbol)!;
+            const asset = assets.find(a => a.symbol === symbol);
             const stats = calculateStats(symbol);
             return { ...asset, count, ...stats };
       }).sort((a, b) => b.count - a.count);
 
-      setCompData(years);
-      setScoreboard(sortedScoreboard);
+      return { years, scoreboard: sortedScoreboard };
   };
 
   useEffect(() => { fetchPowerLawData(); }, []);
-  useEffect(() => { if (activeTab === 'comparison') { fetchComparisonData(); } }, [activeTab]);
+  useEffect(() => { if (activeTab === 'comparison') { fetchComparisonData(); } }, [activeTab, activeSector]);
 
   const downloadPlCSV = () => {
     if (!plData.length) return;
@@ -904,6 +1401,31 @@ const DataModelsView = () => {
                    <button onClick={() => setActiveTab('powerLaw')} className={`px-4 py-1.5 rounded-sm text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 ${activeTab === 'powerLaw' ? 'bg-amber-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'}`}>Power Law Model</button>
                    <button onClick={() => setActiveTab('comparison')} className={`px-4 py-1.5 rounded-sm text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 ${activeTab === 'comparison' ? 'bg-amber-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'}`}>Industrial Race</button>
                  </div>
+                 {activeTab === 'comparison' && (
+                  <div className="ml-2">
+                    <label className="sr-only" htmlFor="sector-select">Select sector</label>
+                    <select
+                      id="sector-select"
+                      value={activeSector}
+                      onChange={(e) => {
+                        const nextSector = e.target.value as keyof typeof SECTORS;
+                        if (nextSector === activeSector) return;
+                        setCompData([]);
+                        setScoreboard([]);
+                        setActiveSector(nextSector);
+                      }}
+                      className="bg-slate-900 border border-slate-700 text-slate-200 text-xs font-bold uppercase tracking-wider rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    >
+                      {(Object.keys(SECTORS) as Array<keyof typeof SECTORS>)
+                        .sort((a, b) => SECTORS[a].label.localeCompare(SECTORS[b].label))
+                        .map((sectorKey) => (
+                        <option key={sectorKey} value={sectorKey}>
+                          {SECTORS[sectorKey].label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                 )}
              </div>
              <button onClick={activeTab === 'powerLaw' ? fetchPowerLawData : fetchComparisonData} className="p-2 hover:bg-slate-800 rounded-full text-slate-400 hover:text-white transition-colors" title="Refresh Data"><RefreshCcw size={18} /></button>
           </div>
@@ -931,7 +1453,7 @@ const DataModelsView = () => {
                   <div className="flex justify-between items-center mb-2 px-2">
                       <h2 className="text-sm font-semibold text-slate-400">BTC Power Law Projection (2009 - {PROJECT_TO_YEAR})</h2>
                       <div className="flex gap-4 text-xs">
-                          <span className="flex items-center gap-1 text-red-400"><div className="w-2 h-2 rounded-full bg-red-400/50"/> +2σ (Upper)</span>
+                          <span className="flex items-center gap-1 text-red-400"><div className="w-2 h-2 rounded-full bg-red-400/50"/> +3σ (Upper)</span>
                           <span className="flex items-center gap-1 text-blue-400"><div className="w-2 h-2 rounded-full bg-blue-400"/> Model</span>
                           <span className="flex items-center gap-1 text-green-400"><div className="w-2 h-2 rounded-full bg-green-400/50"/> -1σ (Lower)</span>
                       </div>
@@ -945,7 +1467,7 @@ const DataModelsView = () => {
                       <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} vertical={false} />
                       <XAxis dataKey={xScale === 'date' ? 'date' : 'daysSinceGenesis'} tickFormatter={formatXAxis} stroke="#64748b" tick={{ fontSize: 11 }} minTickGap={50} type="number" scale={xScale === 'date' ? 'time' : 'log'} domain={['dataMin', 'dataMax']} allowDataOverflow={true}/>
                       <YAxis scale={yScale} domain={['auto', 'auto']} tickFormatter={formatCurrency} stroke="#64748b" tick={{ fontSize: 11 }} width={60} allowDataOverflow={true}/>
-                      <Tooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '0.5rem', fontSize: '12px' }} labelFormatter={formatTooltipDate} formatter={(value, name) => { if (value === null) return ['-', name]; let label = name; if (name === 'upperBand') label = 'Upper Band (+2σ)'; if (name === 'lowerBand') label = 'Lower Band (-1σ)'; return [`$${Number(value).toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 0})}`, label]; }}/>
+                      <Tooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '0.5rem', fontSize: '12px' }} labelFormatter={formatTooltipDate} formatter={(value, name) => { if (value === null) return ['-', name]; let label = name; if (name === 'upperBand') label = 'Upper Band (+3σ)'; if (name === 'lowerBand') label = 'Lower Band (-1σ)'; return [`$${Number(value).toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 0})}`, label]; }}/>
                       <Line type="monotone" dataKey="upperBand" stroke="#ef4444" strokeWidth={1} strokeDasharray="5 5" dot={false} isAnimationActive={false} name="upperBand" />
                       <Line type="monotone" dataKey="lowerBand" stroke="#22c55e" strokeWidth={1} strokeDasharray="5 5" dot={false} isAnimationActive={false} name="lowerBand" />
                       <Line type="monotone" dataKey="fairPrice" stroke="#60a5fa" strokeWidth={2} dot={false} name="Fair Value" isAnimationActive={false} />
@@ -962,8 +1484,8 @@ const DataModelsView = () => {
              </div>
           ) : (
               <div className="space-y-8 animate-in fade-in duration-500 w-full">
-              <div className="mb-4 flex items-center justify-between"><h2 className="text-xl font-bold text-white border-l-4 border-amber-500 pl-4">Industry Cycle Comparison: 2010–2025</h2></div>
-              <div className="bg-slate-900/50 border border-slate-800 p-6 rounded-xl text-center"><h2 className="text-2xl font-bold text-white mb-2 flex items-center justify-center gap-3"><FlaskConical className="text-purple-500" />Bitcoin vs. Chemical Industry</h2><p className="text-slate-400 text-sm max-w-2xl mx-auto">Year-over-Year (YoY) growth comparison starting from {START_YEAR}. Tracks Bitcoin against major chemical companies and funds: Dow, BASF, Celanese, Methanex, and FSCHX.</p></div>
+              <div className="mb-4 flex items-center justify-between"><h2 className="text-xl font-bold text-white border-l-4 border-amber-500 pl-4">Industry Cycle Comparison: {START_YEAR}–2025</h2></div>
+              <div className="bg-slate-900/50 border border-slate-800 p-6 rounded-xl text-center"><h2 className="text-2xl font-bold text-white mb-2 flex items-center justify-center gap-3">{SECTORS[activeSector].icon}Bitcoin vs. {SECTORS[activeSector].label}</h2><p className="text-slate-400 text-sm max-w-2xl mx-auto">Year-over-Year (YoY) growth comparison starting from {START_YEAR}. Tracks Bitcoin against leading {SECTORS[activeSector].label.toLowerCase()} operators.</p></div>
               {compLoading && (<div className="flex flex-col items-center justify-center py-20 text-slate-500 gap-4"><Loader2 className="animate-spin" size={48} /><p>Crunching historical data for 6 assets...</p></div>)}
               {compError && (<div className="bg-yellow-900/20 border border-yellow-700/50 text-yellow-200 p-6 rounded-lg text-center"><AlertCircle className="mx-auto mb-2" size={32} />{compError}</div>)}
               {!compLoading && (
@@ -992,7 +1514,7 @@ const DataModelsView = () => {
                       ))}
                   </div>
                   <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 mt-8 w-full">
-                      <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2 border-b border-slate-800 pb-4"><Trophy className="text-yellow-500" />Decade Scoreboard ({START_YEAR} - Present)</h3>
+                      <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2 border-b border-slate-800 pb-4"><Trophy className="text-yellow-500" />{SECTORS[activeSector].label} Scoreboard ({START_YEAR} - Present)</h3>
                       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
                           {Array.isArray(scoreboard) && scoreboard.map((item, index) => (
                           <div key={item.symbol} className={`relative p-4 rounded-lg border flex flex-col items-center text-center ${index === 0 ? 'bg-yellow-900/10 border-yellow-500/50' : 'bg-slate-800/30 border-slate-700'}`}>
@@ -1054,3 +1576,4 @@ const App = () => {
 };
 
 export default App;
+

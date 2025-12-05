@@ -8,8 +8,18 @@ const cache: Record<string, { payload: Payload; timestamp: number }> = {};
 const CACHE_TTL = 1000 * 60 * 5;
 const headers = { 'Cache-Control': 's-maxage=300, stale-while-revalidate=3600' };
 
-export async function GET(request: Request, { params }: { params: { sector: string } }) {
+// Define the Next.js 15 params structure
+type Props = {
+  params: Promise<{
+    sector: string;
+  }>;
+};
+
+export async function GET(request: Request, props: Props) {
+  // Await the params object before accessing properties
+  const params = await props.params;
   const sectorKey = params.sector as keyof typeof SECTOR_CONFIG;
+
   if (!SECTOR_CONFIG[sectorKey]) {
     return NextResponse.json({ error: 'Unknown sector' }, { status: 404 });
   }
@@ -75,8 +85,6 @@ const fetchLiveYearToDate = async (assets: typeof SECTOR_CONFIG['chemicals']['as
   });
   return entry;
 };
-
-
 
 
 

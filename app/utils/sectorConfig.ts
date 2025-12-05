@@ -14,7 +14,7 @@ type SectorConfig = {
   staticHistory: Record<number, Record<string, { start: number; end: number } | null>>;
 };
 
-export const SECTOR_CONFIG: Record<'chemicals' | 'agriculture', SectorConfig> = {
+export const SECTOR_CONFIG: Record<'chemicals' | 'agriculture' | 'automotive' | 'energy', SectorConfig> = {
   chemicals: {
     label: 'Chemicals',
     assets: [
@@ -58,12 +58,52 @@ export const SECTOR_CONFIG: Record<'chemicals' | 'agriculture', SectorConfig> = 
       2023: { 'BTC-USD': { start: 16530, end: 42260 }, ADM: { start: 75.22, end: 67.09 }, BG: { start: 90.71, end: 94.79 }, DE: { start: 406.88, end: 388.54 }, MOS: { start: 45.85, end: 33.74 }, CF: { start: 78.99, end: 75.69 } },
       2024: { 'BTC-USD': { start: 42260, end: 98000 }, ADM: { start: 51.63, end: 48.62 }, BG: { start: 82.72, end: 75.13 }, DE: { start: 383.83, end: 417.83 }, MOS: { start: 29.17, end: 23.86 }, CF: { start: 71.89, end: 83.31 } }
     }
+  },
+  automotive: {
+    label: 'Automotive',
+    assets: [
+        { symbol: 'BTC-USD', name: 'Bitcoin', color: '#f7931a', googleSymbol: 'CURRENCY:BTC-USD' },
+        { symbol: 'TM', name: 'Toyota', color: '#EB0A1E', googleSymbol: 'NYSE:TM' },
+        { symbol: 'F', name: 'Ford', color: '#003478', googleSymbol: 'NYSE:F' },
+        { symbol: 'GM', name: 'GM', color: '#2462D1', googleSymbol: 'NYSE:GM' },
+        { symbol: 'HMC', name: 'Honda', color: '#CC0000', googleSymbol: 'NYSE:HMC' }
+    ],
+    staticHistory: {
+        2016: { 'BTC-USD': { start: 434, end: 963 }, TM: { start: 122.5, end: 118.5 }, F: { start: 14.0, end: 12.1 }, GM: { start: 34.0, end: 34.8 }, HMC: { start: 30.5, end: 29.5 } },
+        2017: { 'BTC-USD': { start: 963, end: 13860 }, TM: { start: 118.5, end: 126.5 }, F: { start: 12.1, end: 12.5 }, GM: { start: 34.8, end: 40.9 }, HMC: { start: 29.5, end: 34.2 } },
+        2018: { 'BTC-USD': { start: 13860, end: 3740 }, TM: { start: 126.5, end: 116.0 }, F: { start: 12.5, end: 7.6 }, GM: { start: 40.9, end: 33.4 }, HMC: { start: 34.2, end: 26.3 } },
+        2019: { 'BTC-USD': { start: 3740, end: 7200 }, TM: { start: 116.0, end: 140.5 }, F: { start: 7.6, end: 9.3 }, GM: { start: 33.4, end: 36.6 }, HMC: { start: 26.3, end: 28.4 } },
+        2020: { 'BTC-USD': { start: 7200, end: 28990 }, TM: { start: 140.5, end: 154.0 }, F: { start: 9.3, end: 8.8 }, GM: { start: 36.6, end: 41.6 }, HMC: { start: 28.4, end: 29.0 } },
+        2021: { 'BTC-USD': { start: 28990, end: 46200 }, TM: { start: 154.0, end: 185.0 }, F: { start: 8.8, end: 20.8 }, GM: { start: 41.6, end: 58.6 }, HMC: { start: 29.0, end: 28.6 } },
+        2022: { 'BTC-USD': { start: 46200, end: 16530 }, TM: { start: 185.0, end: 136.5 }, F: { start: 20.8, end: 11.6 }, GM: { start: 58.6, end: 33.6 }, HMC: { start: 28.6, end: 22.6 } },
+        2023: { 'BTC-USD': { start: 16530, end: 42260 }, TM: { start: 136.5, end: 181.0 }, F: { start: 11.6, end: 12.2 }, GM: { start: 33.6, end: 35.9 }, HMC: { start: 22.6, end: 31.0 } },
+        2024: { 'BTC-USD': { start: 42260, end: 98000 }, TM: { start: 181.0, end: 200.0 }, F: { start: 12.2, end: 10.5 }, GM: { start: 35.9, end: 45.0 }, HMC: { start: 31.0, end: 33.5 } }
+    }
+  },
+  energy: {
+    label: 'Energy',
+    assets: [
+        { symbol: 'BTC-USD', name: 'Bitcoin', color: '#f7931a', googleSymbol: 'CURRENCY:BTC-USD' },
+        { symbol: 'XOM', name: 'ExxonMobil', color: '#FF0000', googleSymbol: 'NYSE:XOM' },
+        { symbol: 'CVX', name: 'Chevron', color: '#0066B2', googleSymbol: 'NYSE:CVX' },
+        { symbol: 'SHEL', name: 'Shell', color: '#FBCE07', googleSymbol: 'NYSE:SHEL' },
+        { symbol: 'TTE', name: 'TotalEnergies', color: '#ED0000', googleSymbol: 'NYSE:TTE' }
+    ],
+    staticHistory: {
+        2016: { 'BTC-USD': { start: 434, end: 963 }, XOM: { start: 77.0, end: 90.0 }, CVX: { start: 85.0, end: 117.0 }, SHEL: { start: 46.0, end: 54.0 }, TTE: { start: 45.0, end: 51.0 } },
+        2017: { 'BTC-USD': { start: 963, end: 13860 }, XOM: { start: 90.0, end: 83.0 }, CVX: { start: 117.0, end: 125.0 }, SHEL: { start: 54.0, end: 66.0 }, TTE: { start: 51.0, end: 56.0 } },
+        2018: { 'BTC-USD': { start: 13860, end: 3740 }, XOM: { start: 83.0, end: 68.0 }, CVX: { start: 125.0, end: 108.0 }, SHEL: { start: 66.0, end: 58.0 }, TTE: { start: 56.0, end: 52.0 } },
+        2019: { 'BTC-USD': { start: 3740, end: 7200 }, XOM: { start: 68.0, end: 69.0 }, CVX: { start: 108.0, end: 120.0 }, SHEL: { start: 58.0, end: 59.0 }, TTE: { start: 52.0, end: 55.0 } },
+        2020: { 'BTC-USD': { start: 7200, end: 28990 }, XOM: { start: 69.0, end: 41.0 }, CVX: { start: 120.0, end: 84.0 }, SHEL: { start: 59.0, end: 35.0 }, TTE: { start: 55.0, end: 41.0 } },
+        2021: { 'BTC-USD': { start: 28990, end: 46200 }, XOM: { start: 41.0, end: 61.0 }, CVX: { start: 84.0, end: 117.0 }, SHEL: { start: 35.0, end: 44.0 }, TTE: { start: 41.0, end: 49.0 } },
+        2022: { 'BTC-USD': { start: 46200, end: 16530 }, XOM: { start: 61.0, end: 110.0 }, CVX: { start: 117.0, end: 179.0 }, SHEL: { start: 44.0, end: 57.0 }, TTE: { start: 49.0, end: 63.0 } },
+        2023: { 'BTC-USD': { start: 16530, end: 42260 }, XOM: { start: 110.0, end: 100.0 }, CVX: { start: 179.0, end: 149.0 }, SHEL: { start: 57.0, end: 65.0 }, TTE: { start: 63.0, end: 67.0 } },
+        2024: { 'BTC-USD': { start: 42260, end: 98000 }, XOM: { start: 100.0, end: 118.0 }, CVX: { start: 149.0, end: 155.0 }, SHEL: { start: 65.0, end: 70.0 }, TTE: { start: 67.0, end: 72.0 } }
+    }
   }
 };
 
 export type SectorKey = keyof typeof SECTOR_CONFIG;
-
-
 
 
 
