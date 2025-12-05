@@ -1115,7 +1115,7 @@ const ExecutivesView = ({ setView }: ExecutivesViewProps) => (
 );
 
 const DataModelsView = () => {
-  const hasCachedPowerLaw = Array.isArray(POWER_LAW_CACHE.data) && POWER_LAW_CACHE.data.length > 0;
+  const hasCachedPowerLaw = Array.isArray(POWER_LAW_CACHE.data) && (POWER_LAW_CACHE.data as any[]).length > 0;
   const cachedStats = POWER_LAW_CACHE.stats;
   const cacheIsFresh = hasCachedPowerLaw && (Date.now() - POWER_LAW_CACHE.fetchedAt) < CACHE_TTL_MS;
   const [activeTab, setActiveTab] = useState('powerLaw'); 
