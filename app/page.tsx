@@ -1123,7 +1123,7 @@ const DataModelsView = () => {
   const [plData, setPlData] = useState<any[]>(POWER_LAW_CACHE.data || []);
   const [plLoading, setPlLoading] = useState(!hasCachedPowerLaw);
   const [plError, setPlError] = useState<string | null>(null);
-  const [plDataSource, setPlDataSource] = useState(cachedStats ? `${cachedStats.dataSource}${cacheIsFresh ? ' (cached)' : ''}` : 'Initializing...');
+  const [plDataSource, setPlDataSource] = useState(cachedStats ? `${(cachedStats as any).dataSource}${cacheIsFresh ? ' (cached)' : ''}` : 'Initializing...');
   const [compData, setCompData] = useState<any[]>([]);
   const [compLoading, setCompLoading] = useState(false);
   const [compError, setCompError] = useState<string | null>(null);
