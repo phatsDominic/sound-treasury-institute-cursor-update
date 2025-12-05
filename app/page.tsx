@@ -1114,26 +1114,36 @@ const ExecutivesView = ({ setView }: ExecutivesViewProps) => (
   </>
 );
 
+type CachedStats = {
+  currentPrice?: number;
+  currentFairPrice?: number;
+  stdDev?: number;
+  rSquared?: number;
+  dataSource?: string;
+} | null;
+
 const DataModelsView = () => {
   const hasCachedPowerLaw = Array.isArray(POWER_LAW_CACHE.data) && (POWER_LAW_CACHE.data as any[]).length > 0;
-  const cachedStats = POWER_LAW_CACHE.stats;
+  const cachedStats = (POWER_LAW_CACHE.stats || null) as CachedStats;
   const cacheIsFresh = hasCachedPowerLaw && (Date.now() - POWER_LAW_CACHE.fetchedAt) < CACHE_TTL_MS;
   const [activeTab, setActiveTab] = useState('powerLaw'); 
   const [activeSector, setActiveSector] = useState<keyof typeof SECTORS>('chemicals');
   const [plData, setPlData] = useState<any[]>(POWER_LAW_CACHE.data || []);
   const [plLoading, setPlLoading] = useState(!hasCachedPowerLaw);
   const [plError, setPlError] = useState<string | null>(null);
-  const [plDataSource, setPlDataSource] = useState(cachedStats ? `${(cachedStats as any).dataSource}${cacheIsFresh ? ' (cached)' : ''}` : 'Initializing...');
+  const [plDataSource, setPlDataSource] = useState<string>(
+    cachedStats?.dataSource ? `${cachedStats.dataSource}${cacheIsFresh ? ' (cached)' : ''}` : 'Initializing...'
+  );
   const [compData, setCompData] = useState<any[]>([]);
   const [compLoading, setCompLoading] = useState(false);
   const [compError, setCompError] = useState<string | null>(null);
   const [scoreboard, setScoreboard] = useState<any[]>([]); 
   const [yScale, setYScale] = useState<'log' | 'linear'>('log');
   const [xScale, setXScale] = useState<'date' | 'log-days'>('date');
-  const [currentPrice, setCurrentPrice] = useState(cachedStats?.currentPrice || null);
-  const [currentFairPrice, setCurrentFairPrice] = useState(cachedStats?.currentFairPrice || null);
-  const [stdDev, setStdDev] = useState(cachedStats?.stdDev || 0);
-  const [rSquared, setRSquared] = useState(cachedStats?.rSquared || 0);
+  const [currentPrice, setCurrentPrice] = useState<number | null>(cachedStats?.currentPrice ?? null);
+  const [currentFairPrice, setCurrentFairPrice] = useState<number | null>(cachedStats?.currentFairPrice ?? null);
+  const [stdDev, setStdDev] = useState<number>(cachedStats?.stdDev ?? 0);
+  const [rSquared, setRSquared] = useState<number>(cachedStats?.rSquared ?? 0);
 
   const formatXAxis = (val: any) => {
     if (xScale === 'date') return new Date(val).getFullYear().toString();
