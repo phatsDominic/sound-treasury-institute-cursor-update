@@ -41,12 +41,12 @@ const SECTORS = {
     label: 'Chemicals',
     icon: <FlaskConical className="text-purple-500" />,
     assets: [
-      { symbol: 'BTC-USD', name: 'Bitcoin', color: '#f7931a' },
-      { symbol: 'DOW', name: 'Dow Inc.', color: '#C8102E' }, 
-      { symbol: 'BASFY', name: 'BASF (ADR)', color: '#004A96' }, 
-      { symbol: 'CE', name: 'Celanese', color: '#008542' },
-      { symbol: 'MEOH', name: 'Methanex', color: '#582C83' },
-      { symbol: 'FSCHX', name: 'Fidelity Chem', color: '#71c7ec' }
+      { symbol: 'BTC-USD', name: 'Bitcoin', color: '#f7931a', googleSymbol: 'CURRENCY:BTC-USD' },
+      { symbol: 'DOW', name: 'Dow Inc.', color: '#C8102E', googleSymbol: 'NYSE:DOW' },
+      { symbol: 'BASFY', name: 'BASF (ADR)', color: '#004A96', googleSymbol: 'OTCMKTS:BASFY' },
+      { symbol: 'CE', name: 'Celanese', color: '#008542', googleSymbol: 'NYSE:CE' },
+      { symbol: 'MEOH', name: 'Methanex', color: '#582C83', googleSymbol: 'NASDAQ:MEOH' },
+      { symbol: 'FSCHX', name: 'Fidelity Chem', color: '#71c7ec', googleSymbol: 'MUTF:FSCHX' }
     ],
     staticHistory: {
       2016: { 'BTC-USD': { start: 434, end: 963 }, 'DOW': null, 'BASFY': { start: 16.5, end: 20.8 }, 'CE': { start: 66, end: 78.5 }, 'MEOH': { start: 27.77, end: 45.95 }, 'FSCHX': { start: 12.12, end: 14.91 } },
@@ -1120,16 +1120,16 @@ const DataModelsView = () => {
   const cacheIsFresh = hasCachedPowerLaw && (Date.now() - POWER_LAW_CACHE.fetchedAt) < CACHE_TTL_MS;
   const [activeTab, setActiveTab] = useState('powerLaw'); 
   const [activeSector, setActiveSector] = useState<keyof typeof SECTORS>('chemicals');
-  const [plData, setPlData] = useState(POWER_LAW_CACHE.data || []);
+  const [plData, setPlData] = useState<any[]>(POWER_LAW_CACHE.data || []);
   const [plLoading, setPlLoading] = useState(!hasCachedPowerLaw);
-  const [plError, setPlError] = useState(null);
+  const [plError, setPlError] = useState<string | null>(null);
   const [plDataSource, setPlDataSource] = useState(cachedStats ? `${cachedStats.dataSource}${cacheIsFresh ? ' (cached)' : ''}` : 'Initializing...');
-  const [compData, setCompData] = useState([]);
+  const [compData, setCompData] = useState<any[]>([]);
   const [compLoading, setCompLoading] = useState(false);
-  const [compError, setCompError] = useState(null);
-  const [scoreboard, setScoreboard] = useState([]); 
-  const [yScale, setYScale] = useState('log');
-  const [xScale, setXScale] = useState('date');
+  const [compError, setCompError] = useState<string | null>(null);
+  const [scoreboard, setScoreboard] = useState<any[]>([]); 
+  const [yScale, setYScale] = useState<'log' | 'linear'>('log');
+  const [xScale, setXScale] = useState<'date' | 'log-days'>('date');
   const [currentPrice, setCurrentPrice] = useState(cachedStats?.currentPrice || null);
   const [currentFairPrice, setCurrentFairPrice] = useState(cachedStats?.currentFairPrice || null);
   const [stdDev, setStdDev] = useState(cachedStats?.stdDev || 0);
