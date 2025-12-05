@@ -527,9 +527,9 @@ const SECTORS = {
 
 // --- 2. HELPERS ---
 
-const calculateFairPrice = (days) => days <= 0 ? 0 : MODEL_COEFF * Math.pow(days, MODEL_EXPONENT);
-const formatPrice = (val) => !val ? '-' : val > 1000 ? `$${val.toLocaleString(undefined, {maximumFractionDigits: 0})}` : `$${val.toFixed(2)}`;
-const formatCurrency = (val) => val >= 1000000 ? `$${(val / 1000000).toFixed(1)}M` : val >= 1000 ? `$${(val / 1000).toFixed(0)}k` : `$${val.toFixed(0)}`;
+const calculateFairPrice = (days: number) => days <= 0 ? 0 : MODEL_COEFF * Math.pow(days, MODEL_EXPONENT);
+const formatPrice = (val: number | null) => !val ? '-' : val > 1000 ? `$${val.toLocaleString(undefined, {maximumFractionDigits: 0})}` : `$${val.toFixed(2)}`;
+const formatCurrency = (val: number) => val >= 1000000 ? `$${(val / 1000000).toFixed(1)}M` : val >= 1000 ? `$${(val / 1000).toFixed(0)}k` : `$${val.toFixed(0)}`;
 
 const fetchWithRetry = async (url, maxRetries = 3, initialDelay = 1000) => {
     let delay = initialDelay;
