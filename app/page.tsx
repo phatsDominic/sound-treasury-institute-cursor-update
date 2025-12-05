@@ -554,7 +554,14 @@ const downsampleSeries = (data: any[], step = 1) => {
 
 // --- 3. BASE COMPONENTS (Defined first to avoid ReferenceError) ---
 
-const Button = ({ children, variant = "primary", className = "", onClick }) => {
+interface ButtonProps {
+  children: React.ReactNode;
+  variant?: "primary" | "secondary" | "outline";
+  className?: string;
+  onClick?: () => void;
+}
+
+const Button = ({ children, variant = "primary", className = "", onClick }: ButtonProps) => {
   const baseStyle = "inline-flex items-center justify-center px-6 py-3 border text-base font-medium rounded-sm transition-all duration-200 shadow-sm";
   const variants = {
     primary: "border-transparent text-slate-900 bg-amber-500 hover:bg-amber-400 focus:ring-2 focus:ring-offset-2 focus:ring-amber-500",
@@ -569,7 +576,13 @@ const Button = ({ children, variant = "primary", className = "", onClick }) => {
   );
 };
 
-const Section = ({ children, className = "", id = "" }) => (
+interface SectionProps {
+  children: React.ReactNode;
+  className?: string;
+  id?: string;
+}
+
+const Section = ({ children, className = "", id = "" }: SectionProps) => (
   <div id={id} className={`py-20 px-4 sm:px-6 lg:px-8 ${className}`}>
     <div className="max-w-7xl mx-auto">
       {children}
@@ -577,7 +590,13 @@ const Section = ({ children, className = "", id = "" }) => (
   </div>
 );
 
-const SectionTitle = ({ title, subtitle, light = false }) => (
+interface SectionTitleProps {
+  title: string;
+  subtitle?: boolean;
+  light?: boolean;
+}
+
+const SectionTitle = ({ title, subtitle, light = false }: SectionTitleProps) => (
   <div className="mb-12">
     <h2 className={`text-3xl font-bold tracking-tight sm:text-4xl ${light ? 'text-white' : 'text-slate-900'}`}>
       {title}
@@ -588,7 +607,14 @@ const SectionTitle = ({ title, subtitle, light = false }) => (
   </div>
 );
 
-const ImageWithFallback = ({ src, fallback, alt, className }) => {
+interface ImageWithFallbackProps {
+  src: string;
+  fallback: string;
+  alt: string;
+  className?: string;
+}
+
+const ImageWithFallback = ({ src, fallback, alt, className }: ImageWithFallbackProps) => {
   const [imgSrc, setImgSrc] = useState(src);
   return (
     <img 
@@ -602,12 +628,17 @@ const ImageWithFallback = ({ src, fallback, alt, className }) => {
 
 // --- 4. LAYOUT COMPONENTS ---
 
-const Navbar = ({ currentView, setView }) => {
+interface NavbarProps {
+  currentView: string;
+  setView: (view: string) => void;
+}
+
+const Navbar = ({ currentView, setView }: NavbarProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const navLinks = [
-    { label: 'Home', view: 'home' },
-    { label: 'Data & Models', view: 'data' },
-    { label: 'About This Project', view: 'executives' },
+    { label: 'Home', view: 'home', section: '' },
+    { label: 'Data & Models', view: 'data', section: '' },
+    { label: 'About This Project', view: 'executives', section: '' },
     { label: 'FAQ', view: 'home', section: 'faq' },
   ];
 
@@ -705,7 +736,11 @@ const Footer = () => (
 
 // --- 5. PAGE VIEWS ---
 
-const HomeView = ({ setView }) => (
+interface HomeViewProps {
+  setView: (view: string) => void;
+}
+
+const HomeView = ({ setView }: HomeViewProps) => (
   <>
     <div className="relative bg-slate-900 overflow-hidden min-h-[600px] flex items-center">
       <div className="absolute inset-0">
@@ -919,7 +954,11 @@ const HomeView = ({ setView }) => (
   </>
 );
 
-const ExecutivesView = ({ setView }) => (
+interface ExecutivesViewProps {
+  setView: (view: string) => void;
+}
+
+const ExecutivesView = ({ setView }: ExecutivesViewProps) => (
   <>
     <div className="bg-slate-900 py-24 border-b border-slate-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
@@ -934,7 +973,10 @@ const ExecutivesView = ({ setView }) => (
         </p>
         <div className="flex flex-col sm:flex-row justify-center gap-4">
           <Button onClick={() => setView('data')}>View the Models & Dashboards</Button>
-          <Button variant="secondary" onClick={() => document.getElementById('exec-overview').scrollIntoView({behavior:'smooth'})}>
+          <Button variant="secondary" onClick={() => {
+            const el = document.getElementById('exec-overview');
+            if (el) el.scrollIntoView({behavior:'smooth'});
+          }}>
             Read the Executive Overview
           </Button>
         </div>
@@ -1093,13 +1135,13 @@ const DataModelsView = () => {
   const [stdDev, setStdDev] = useState(cachedStats?.stdDev || 0);
   const [rSquared, setRSquared] = useState(cachedStats?.rSquared || 0);
 
-  const formatXAxis = (val) => {
+  const formatXAxis = (val: any) => {
     if (xScale === 'date') return new Date(val).getFullYear().toString();
     const date = new Date(GENESIS_DATE + val * ONE_DAY_MS);
     return date.getFullYear().toString();
   };
 
-  const formatTooltipDate = (label) => {
+  const formatTooltipDate = (label: any) => {
     const date = xScale === 'date' ? new Date(label) : new Date(GENESIS_DATE + label * ONE_DAY_MS);
     return date.toLocaleDateString();
   };
@@ -1108,10 +1150,10 @@ const DataModelsView = () => {
   const fetchCoinCapData = async () => {
       const json = await fetchWithRetry('https://api.coincap.io/v2/assets/bitcoin/history?interval=d1');
       if (!json.data) throw new Error('Invalid CoinCap Data');
-      return json.data.map(d => ({ date: d.time, price: parseFloat(d.priceUsd) }));
+      return json.data.map((d: any) => ({ date: d.time, price: parseFloat(d.priceUsd) }));
   };
 
-  const fetchYahooData = async (symbol, interval = '1d', range = 'max') => {
+  const fetchYahooData = async (symbol: string, interval = '1d', range = 'max') => {
     const yahooUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?range=${range}&interval=${interval}&_=${new Date().getTime()}`;
     const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(yahooUrl)}`;
     const response = await fetch(proxyUrl);
@@ -1124,15 +1166,15 @@ const DataModelsView = () => {
     const timestamps = result.timestamp || [];
     const quotes = result.indicators.quote[0].close || [];
     const adjClose = result.indicators.adjclose?.[0]?.adjclose || quotes;
-    return timestamps.map((ts, index) => ({ date: ts * 1000, price: adjClose[index] }));
+    return timestamps.map((ts: number, index: number) => ({ date: ts * 1000, price: adjClose[index] }));
   };
 
   const fetchCoinGeckoData = async () => {
     const json = await fetchWithRetry('https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=max&interval=daily');
-    return json.prices.map(([ts, price]) => ({ date: ts, price: price }));
+    return json.prices.map(([ts, price]: [number, number]) => ({ date: ts, price: price }));
   };
 
-  const fetchFromSource = (label, runner) => runner().then(data => ({ source: label, data }));
+  const fetchFromSource = (label: string, runner: () => Promise<any>) => runner().then(data => ({ source: label, data }));
 
   const fetchBestDataSource = () => Promise.any([
     fetchFromSource('CoinCap API', fetchCoinCapData),
@@ -1307,11 +1349,11 @@ const DataModelsView = () => {
 
   const processComparisonData = (historyData: Record<number, Record<string, any>>, assets: typeof SECTORS['chemicals']['assets']) => {
       const years = [];
-      const wins = {};
+      const wins: Record<string, number> = {};
       assets.forEach(a => wins[a.symbol] = 0);
       
       for (let year = START_YEAR; year <= 2025; year++) {
-          const yearReturns = [];
+          const yearReturns: any[] = [];
           const yearData = historyData[year];
 
           if (yearData) {
@@ -1338,8 +1380,8 @@ const DataModelsView = () => {
           }
       }
 
-      const calculateStats = (symbol) => {
-          const getPrice = (year, type) => historyData[year] ? historyData[year][symbol]?.[type] : null;
+      const calculateStats = (symbol: string) => {
+          const getPrice = (year: number, type: string) => historyData[year] ? historyData[year][symbol]?.[type] : null;
           const currentEnd = getPrice(2025, 'end');
           const p2 = getPrice(2023, 'end');
           const cagr2 = (p2 && currentEnd) ? (Math.pow(currentEnd / p2, 1/2) - 1) * 100 : null;
