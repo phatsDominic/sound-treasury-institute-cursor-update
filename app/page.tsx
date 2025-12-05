@@ -1274,14 +1274,12 @@ const DataModelsView = () => {
     try {
       const { source: sourceName, data: rawPoints } = await fetchBestDataSource();
 
-    const processedDataRaw = (rawPoints as Array<{ date: number; price: number | null | undefined }>).map((pt) => {
+    const processedData = (rawPoints as Array<{ date: number; price: number | null | undefined }>).map((pt) => {
         if (pt.price === null || pt.price === undefined) return null;
         const daysSinceGenesis = (pt.date - GENESIS_DATE) / ONE_DAY_MS;
         const fairPrice = daysSinceGenesis > 0 ? calculateFairPrice(daysSinceGenesis) : 0;
         return { date: pt.date, price: pt.price, fairPrice, daysSinceGenesis };
-      }).filter(d => d !== null && d.price > 0 && d.fairPrice > 0 && d.daysSinceGenesis > 1);
-
-      const processedData = processedDataRaw as Array<PowerLawPoint>;
+      }).filter((d): d is PowerLawPoint => d !== null && d.price !== null && d.fairPrice > 0 && d.daysSinceGenesis > 1);
 
       if (processedData.length === 0) throw new Error('No valid data');
 
