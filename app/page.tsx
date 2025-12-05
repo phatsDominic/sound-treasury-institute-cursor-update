@@ -1261,7 +1261,7 @@ const DataModelsView = () => {
     try {
       const { source: sourceName, data: rawPoints } = await fetchBestDataSource();
 
-      let processedData = rawPoints.map(pt => {
+      let processedData = (rawPoints as Array<{ date: number; price: number | null | undefined }>).map((pt) => {
         if (pt.price === null || pt.price === undefined) return null;
         const daysSinceGenesis = (pt.date - GENESIS_DATE) / ONE_DAY_MS;
         const fairPrice = daysSinceGenesis > 0 ? calculateFairPrice(daysSinceGenesis) : 0;
