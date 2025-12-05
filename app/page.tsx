@@ -42,6 +42,28 @@ type AssetEntry = {
   googleSymbol?: string;
 };
 
+type ComparisonReturn = AssetEntry & {
+  value: number | null;
+  startPrice: number | null;
+  endPrice: number | null;
+};
+
+type ComparisonYear = {
+  year: number;
+  returns: ComparisonReturn[];
+  winner: ComparisonReturn | null;
+};
+
+type ScoreboardEntry = AssetEntry & {
+  count: number;
+  cagr2: number | null;
+  cagr3: number | null;
+  cagr5: number | null;
+  cagr10: number | null;
+  label10: string;
+  totalReturn: number | null;
+};
+
 const POWER_LAW_CACHE: {
   data: PowerLawPoint[] | null;
   stats: CachedStats;
@@ -1156,10 +1178,10 @@ const DataModelsView = () => {
   const [plDataSource, setPlDataSource] = useState<string>(
     cachedStats?.dataSource ? `${cachedStats.dataSource}${cacheIsFresh ? ' (cached)' : ''}` : 'Initializing...'
   );
-  const [compData, setCompData] = useState<any[]>([]);
+  const [compData, setCompData] = useState<ComparisonYear[]>([]);
   const [compLoading, setCompLoading] = useState(false);
   const [compError, setCompError] = useState<string | null>(null);
-  const [scoreboard, setScoreboard] = useState<any[]>([]); 
+  const [scoreboard, setScoreboard] = useState<ScoreboardEntry[]>([]); 
   const [yScale, setYScale] = useState<'log' | 'linear'>('log');
   const [xScale, setXScale] = useState<'date' | 'log-days'>('date');
   const [currentPrice, setCurrentPrice] = useState<number | null>(cachedStats?.currentPrice ?? null);
@@ -1382,13 +1404,13 @@ const DataModelsView = () => {
   const processComparisonData = (
     historyData: Record<number, Record<string, any>>,
     assets: AssetEntry[]
-  ) => {
-      const years = [];
+  ): { years: ComparisonYear[]; scoreboard: ScoreboardEntry[] } => {
+      const years: ComparisonYear[] = [];
       const wins: Record<string, number> = {};
       assets.forEach(a => wins[a.symbol] = 0);
       
       for (let year = START_YEAR; year <= 2025; year++) {
-          const yearReturns: any[] = [];
+          const yearReturns: ComparisonReturn[] = [];
           const yearData = historyData[year];
 
           if (yearData) {
@@ -1434,8 +1456,8 @@ const DataModelsView = () => {
           return { cagr2, cagr3, cagr5, cagr10, label10, totalReturn };
       };
 
-      const sortedScoreboard = Object.entries(wins).map(([symbol, count]) => {
-            const asset = assets.find(a => a.symbol === symbol);
+      const sortedScoreboard: ScoreboardEntry[] = Object.entries(wins).map(([symbol, count]) => {
+            const asset = assets.find(a => a.symbol === symbol)!;
             const stats = calculateStats(symbol);
             return { ...asset, count, ...stats };
       }).sort((a, b) => b.count - a.count);
@@ -1575,7 +1597,7 @@ const DataModelsView = () => {
                           {yearData.winner && (<span className="text-xs font-medium px-2 py-1 rounded bg-yellow-500/20 text-yellow-200 border border-yellow-500/30 flex items-center gap-1"><Trophy size={12} />Winner: {yearData.winner.name}</span>)}
                           </div>
                           <div className="p-4"><div className="flex flex-col gap-2">
-                              {yearData.returns.map((item, idx) => (
+                              {yearData.returns.map((item: ComparisonReturn, idx) => (
                               <div key={item.symbol} className="relative flex items-center h-10">
                                   <div className="w-24 text-xs font-medium text-slate-400 shrink-0 truncate pr-2 flex flex-col justify-center"><span>{item.name}</span></div>
                                   <div className="w-28 text-[10px] text-slate-500 shrink-0 flex flex-col justify-center mr-2 border-l border-slate-800 pl-2 leading-tight">
