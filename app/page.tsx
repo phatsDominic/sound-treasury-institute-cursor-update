@@ -1445,8 +1445,8 @@ const DataModelsView = () => {
     <div className="flex-grow bg-slate-950 text-slate-200 w-full flex flex-col">
       <div className="w-full px-6 py-8 flex-grow">
         <div className="w-full max-w-[1920px] mx-auto">
-          <div className="flex items-center justify-between mb-8 bg-slate-900/50 p-4 rounded-lg border border-slate-800 backdrop-blur-sm">
-             <div className="flex items-center gap-4">
+          <div className="flex items-center justify-between mb-8 bg-slate-900/50 p-4 rounded-lg border border-slate-800 backdrop-blur-sm flex-wrap gap-3">
+             <div className="flex items-center gap-4 flex-wrap">
                  <h2 className="text-xl font-bold text-white flex items-center gap-2"><LayoutDashboard className="text-amber-500" />Hard Money Dashboard</h2>
                  <div className="h-6 w-px bg-slate-700 mx-2"></div>
                  <div className="flex bg-slate-900 border border-slate-700 rounded-md p-1">
@@ -1454,7 +1454,7 @@ const DataModelsView = () => {
                    <button onClick={() => setActiveTab('comparison')} className={`px-4 py-1.5 rounded-sm text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 ${activeTab === 'comparison' ? 'bg-amber-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'}`}>Industrial Race</button>
                  </div>
                  {activeTab === 'comparison' && (
-                  <div className="ml-2">
+                  <div className="ml-2 min-w-[180px] w-full sm:w-56">
                     <label className="sr-only" htmlFor="sector-select">Select sector</label>
                     <select
                       id="sector-select"
@@ -1466,7 +1466,7 @@ const DataModelsView = () => {
                         setScoreboard([]);
                         setActiveSector(nextSector);
                       }}
-                      className="bg-slate-900 border border-slate-700 text-slate-200 text-xs font-bold uppercase tracking-wider rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                      className="bg-slate-900 border border-slate-700 text-slate-200 text-xs font-bold uppercase tracking-wider rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-amber-500 w-full"
                     >
                       {(Object.keys(SECTORS) as Array<keyof typeof SECTORS>)
                         .sort((a, b) => SECTORS[a].label.localeCompare(SECTORS[b].label))
