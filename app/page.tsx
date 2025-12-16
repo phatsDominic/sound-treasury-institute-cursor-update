@@ -763,7 +763,14 @@ const Footer = () => (
         <div>
           <h4 className="text-white font-semibold mb-4">Contact</h4>
           <ul className="space-y-2 text-sm">
-            <li>info@soundmoneytreasury.org</li>
+            <li>
+              <a
+                href="mailto:info@soundmoneytreasury.org"
+                className="hover:text-slate-200 underline underline-offset-4"
+              >
+                info@soundmoneytreasury.org
+              </a>
+            </li>
           </ul>
         </div>
       </div>
