@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   Activity, Anchor, BarChart3, Building, Database, Download, Factory, FileText,
   FlaskConical, Globe, HardHat, LayoutDashboard, Loader2, Menu, RefreshCcw,
-  Settings, ShieldCheck, Trophy, TrendingUp, Truck, X, AlertCircle, Car
+  Settings, Shield, ShieldCheck, Trophy, TrendingUp, Truck, X, AlertCircle, Car
 } from 'lucide-react';
 
 import {
@@ -114,7 +114,7 @@ const SECTORS = {
   },
   agriculture: {
     label: 'Agriculture',
-    icon: <Factory className="text-green-500" />,
+    icon: <Factory className="text-slate-500" />,
     assets: [
       { symbol: 'BTC-USD', name: 'Bitcoin', color: '#f7931a' },
       { symbol: 'ADM', name: 'Archer Daniels Midland', color: '#0f766e' },
@@ -234,7 +234,7 @@ const SECTORS = {
   },
   utilities: {
     label: 'Utilities & Infrastructure',
-    icon: <Anchor className="text-blue-400" />,
+    icon: <Anchor className="text-emerald-400" />,
     assets: [
       { symbol: 'BTC-USD', name: 'Bitcoin', color: '#f7931a' },
       { symbol: 'NEE', name: 'NextEra Energy', color: '#38bdf8' },
@@ -608,7 +608,7 @@ interface ButtonProps {
 const Button = ({ children, variant = "primary", className = "", onClick }: ButtonProps) => {
   const baseStyle = "inline-flex items-center justify-center px-6 py-3 border text-base font-medium rounded-sm transition-all duration-200 shadow-sm";
   const variants = {
-    primary: "border-transparent text-slate-900 bg-amber-500 hover:bg-amber-400 focus:ring-2 focus:ring-offset-2 focus:ring-amber-500",
+    primary: "border-transparent text-amber-900 bg-amber-500 hover:bg-amber-400 focus:ring-2 focus:ring-offset-2 focus:ring-amber-500",
     secondary: "border-slate-600 text-slate-200 bg-transparent hover:bg-slate-800 hover:border-slate-500 focus:ring-2 focus:ring-offset-2 focus:ring-slate-500",
     outline: "border-slate-300 text-slate-700 bg-white hover:bg-slate-50"
   };
@@ -642,7 +642,7 @@ interface SectionTitleProps {
 
 const SectionTitle = ({ title, subtitle, light = false }: SectionTitleProps) => (
   <div className="mb-12">
-    <h2 className={`text-3xl font-bold tracking-tight sm:text-4xl ${light ? 'text-white' : 'text-slate-900'}`}>
+    <h2 className={`text-3xl font-bold tracking-tight sm:text-4xl ${light ? 'text-white' : 'text-amber-900'}`}>
       {title}
     </h2>
     {subtitle && (
@@ -691,7 +691,7 @@ const Navbar = ({ currentView, setView }: NavbarProps) => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
           <div className="flex items-center cursor-pointer" onClick={() => setView('home')}>
-            <Factory className="h-8 w-8 text-amber-500 mr-3" />
+            <Shield className="h-8 w-8 text-slate-500 mr-3" />
             <span className="text-white text-xl font-bold tracking-tight">The Sound Treasury <span className="text-slate-400 font-light">Institute</span></span>
           </div>
           <div className="hidden md:block">
@@ -834,16 +834,16 @@ const HomeView = ({ setView }: HomeViewProps) => (
         <div>
           <SectionTitle title="Who We Are" />
           <div className="text-lg text-slate-600 mb-6 space-y-4">
-            <p>We focus on one intersection: <strong className="text-slate-900">industrial and chemical businesses × corporate treasury × long-horizon capital resilience.</strong></p>
+            <p>We focus on one intersection: <strong className="text-amber-900">industrial and chemical businesses × corporate treasury × long-horizon capital resilience.</strong></p>
             <p>We speak the language of uptime, safety, and reliability; working capital, capex, and ROIC; boards, lenders, and regulators.</p>
           </div>
           <div className="bg-slate-50 p-6 border-l-4 border-amber-500">
-            <p className="font-semibold text-slate-900">We are not an asset manager and we don’t sell trading products.</p>
+            <p className="font-semibold text-amber-900">We are not an asset manager and we don’t sell trading products.</p>
             <p className="text-slate-600 mt-2">Our job is simpler and harder: Help serious operators design balance sheets that can survive—and take advantage of—a more unstable monetary and credit environment.</p>
           </div>
         </div>
         <div className="bg-slate-100 p-8 rounded-lg border border-slate-200">
-          <h3 className="text-lg font-bold text-slate-900 mb-4 uppercase tracking-wider">The Operator's Reality</h3>
+          <h3 className="text-lg font-bold text-amber-900 mb-4 uppercase tracking-wider">The Operator's Reality</h3>
           <ul className="space-y-4">
             {["Rising raw material volatility", "Unpredictable cost of capital", "Long-cycle CaPex vs Short-cycle Rates", "Pension and liability matching"].map((item, i) => (
               <li key={i} className="flex items-center text-slate-700">
@@ -862,7 +862,7 @@ const HomeView = ({ setView }: HomeViewProps) => (
           <div className="h-12 w-12 bg-slate-100 rounded-lg flex items-center justify-center mb-6">
             <FileText className="h-6 w-6 text-slate-700" />
           </div>
-          <h3 className="text-xl font-bold text-slate-900 mb-3">Executive Primers</h3>
+          <h3 className="text-xl font-bold text-amber-900 mb-3">Executive Primers</h3>
           <p className="text-slate-600 text-sm leading-relaxed mb-4">Short, direct briefings for CEOs, CFOs, and boards on how the current monetary regime impacts industrial businesses.</p>
           <span className="text-amber-600 text-sm font-semibold">No jargon. No ideology.</span>
         </div>
@@ -870,7 +870,7 @@ const HomeView = ({ setView }: HomeViewProps) => (
           <div className="h-12 w-12 bg-slate-100 rounded-lg flex items-center justify-center mb-6">
             <ShieldCheck className="h-6 w-6 text-slate-700" />
           </div>
-          <h3 className="text-xl font-bold text-slate-900 mb-3">Treasury Frameworks</h3>
+          <h3 className="text-xl font-bold text-amber-900 mb-3">Treasury Frameworks</h3>
           <p className="text-slate-600 text-sm leading-relaxed mb-4">Structured ways to stress-test balance sheets against inflation and credit stress, and frame new approaches within fiduciary constraints.</p>
           <span className="text-amber-600 text-sm font-semibold">Protect the engine.</span>
         </div>
@@ -878,7 +878,7 @@ const HomeView = ({ setView }: HomeViewProps) => (
           <div className="h-12 w-12 bg-slate-100 rounded-lg flex items-center justify-center mb-6">
             <BarChart3 className="h-6 w-6 text-slate-700" />
           </div>
-          <h3 className="text-xl font-bold text-slate-900 mb-3">Data & Dashboards</h3>
+          <h3 className="text-xl font-bold text-amber-900 mb-3">Data & Dashboards</h3>
           <p className="text-slate-600 text-sm leading-relaxed mb-4">Long-horizon views, valuation regime models for hard assets, and sector benchmarks. Designed so you can see assumptions.</p>
           <span className="text-amber-600 text-sm font-semibold">Adapt to your environment.</span>
         </div>
@@ -923,13 +923,13 @@ const HomeView = ({ setView }: HomeViewProps) => (
           { title: "Investors", desc: "Seeking a hard-asset lens on capital-intensive business." },
         ].map((item, i) => (
             <div key={i} className="border-t-4 border-slate-200 pt-4">
-                <h4 className="font-bold text-lg text-slate-900">{item.title}</h4>
+                <h4 className="font-bold text-lg text-amber-900">{item.title}</h4>
                 <p className="text-slate-600 mt-2 text-sm">{item.desc}</p>
             </div>
         ))}
       </div>
       <div className="mt-12 text-center p-8 bg-slate-50 rounded-lg max-w-3xl mx-auto">
-          <p className="text-lg text-slate-800 font-medium">If you’re responsible for real assets, real people, and real P&Ls—and you’re re-thinking how your balance sheet is built—we built this for you.</p>
+          <p className="text-lg text-amber-800 font-medium">If you’re responsible for real assets, real people, and real P&Ls—and you’re re-thinking how your balance sheet is built—we built this for you.</p>
       </div>
     </Section>
 
@@ -940,21 +940,21 @@ const HomeView = ({ setView }: HomeViewProps) => (
             <div className="flex flex-col md:flex-row gap-6">
                 <div className="w-12 h-12 rounded-full bg-slate-900 text-white flex items-center justify-center font-bold text-xl shrink-0">1</div>
                 <div>
-                    <h3 className="text-xl font-bold text-slate-900">Clarify Your Reality</h3>
+                    <h3 className="text-xl font-bold text-amber-900">Clarify Your Reality</h3>
                     <p className="text-slate-600 mt-2">Start with your actual balance sheet, cash flows, and constraints—no theoretical templates.</p>
                 </div>
             </div>
             <div className="flex flex-col md:flex-row gap-6">
                 <div className="w-12 h-12 rounded-full bg-slate-900 text-white flex items-center justify-center font-bold text-xl shrink-0">2</div>
                 <div>
-                    <h3 className="text-xl font-bold text-slate-900">Map the Options</h3>
+                    <h3 className="text-xl font-bold text-amber-900">Map the Options</h3>
                     <p className="text-slate-600 mt-2">Use data and frameworks to explore how different reserve and hard-asset strategies could behave under a range of scenarios.</p>
                 </div>
             </div>
             <div className="flex flex-col md:flex-row gap-6">
                 <div className="w-12 h-12 rounded-full bg-slate-900 text-white flex items-center justify-center font-bold text-xl shrink-0">3</div>
                 <div>
-                    <h3 className="text-xl font-bold text-slate-900">Equip the Decision-Makers</h3>
+                    <h3 className="text-xl font-bold text-amber-900">Equip the Decision-Makers</h3>
                     <p className="text-slate-600 mt-2">Help boards, lenders, and key executives see the trade-offs clearly so whatever you decide is informed, defensible, and aligned.</p>
                 </div>
             </div>
@@ -967,29 +967,29 @@ const HomeView = ({ setView }: HomeViewProps) => (
       <div className="grid gap-8 md:grid-cols-2">
         <div className="space-y-8">
             <div>
-                <h4 className="font-bold text-slate-900 mb-2">Do you recommend Bitcoin?</h4>
+                <h4 className="font-bold text-amber-900 mb-2">Do you recommend Bitcoin?</h4>
                 <p className="text-slate-600 text-sm">No. We don’t recommend assets. This project is strictly research-focused and explores long-horizon capital resilience across inflation, credit stress, liquidity, and multi-decade industrial cycles.</p>
             </div>
             <div>
-                <h4 className="font-bold text-slate-900 mb-2">Is this investment advice?</h4>
+                <h4 className="font-bold text-amber-900 mb-2">Is this investment advice?</h4>
                 <p className="text-slate-600 text-sm">No. All content on this site is for educational and informational purposes only. We do not provide individualized investment, legal, tax, or accounting advice.</p>
             </div>
             <div>
-                <h4 className="font-bold text-slate-900 mb-2">Do you manage assets or run a fund?</h4>
+                <h4 className="font-bold text-amber-900 mb-2">Do you manage assets or run a fund?</h4>
                 <p className="text-slate-600 text-sm">No. We do not manage assets, run a fund, or solicit capital. Our focus is on research, education, and strategic frameworks.</p>
             </div>
         </div>
         <div className="space-y-8">
             <div>
-                <h4 className="font-bold text-slate-900 mb-2">Why focus on industrial and chemical businesses?</h4>
+                <h4 className="font-bold text-amber-900 mb-2">Why focus on industrial and chemical businesses?</h4>
                 <p className="text-slate-600 text-sm">These businesses are capital-intensive, long-cycle, and highly sensitive to both monetary policy and commodity dynamics. They stand to benefit the most from stronger balance-sheet architecture.</p>
             </div>
             <div>
-                <h4 className="font-bold text-slate-900 mb-2">Are you trying to convince every company to adopt this?</h4>
+                <h4 className="font-bold text-amber-900 mb-2">Are you trying to convince every company to adopt this?</h4>
                 <p className="text-slate-600 text-sm">No. Some balance sheets and ownership structures are not a good fit. Our goal is to help you see the trade-offs clearly so that if you say “yes” or “no,” it’s for the right reasons.</p>
             </div>
             <div>
-                <h4 className="font-bold text-slate-900 mb-2">Can we reuse your models and charts?</h4>
+                <h4 className="font-bold text-amber-900 mb-2">Can we reuse your models and charts?</h4>
                 <p className="text-slate-600 text-sm">In general, yes, with proper attribution. If you want to incorporate them into internal board materials, we encourage you to cite the source and keep the methodology visible.</p>
             </div>
         </div>
@@ -1032,8 +1032,8 @@ const ExecutivesView = ({ setView }: ExecutivesViewProps) => (
       <SectionTitle title="What This Is (and Isn't)" />
       <div className="grid md:grid-cols-2 gap-0 border border-slate-200 rounded-lg overflow-hidden">
         <div className="bg-slate-50 p-10 border-b md:border-b-0 md:border-r border-slate-200">
-          <h3 className="text-xl font-bold text-slate-900 mb-6 flex items-center">
-            <ShieldCheck className="w-6 h-6 mr-2 text-green-600" /> What This Is
+          <h3 className="text-xl font-bold text-amber-900 mb-6 flex items-center">
+            <ShieldCheck className="w-6 h-6 mr-2 text-slate-600" /> What This Is
           </h3>
           <ul className="space-y-4">
             {[
@@ -1043,13 +1043,13 @@ const ExecutivesView = ({ setView }: ExecutivesViewProps) => (
               "A resource to circulate internally to boards."
             ].map((item, i) => (
               <li key={i} className="flex items-start text-slate-700">
-                <span className="text-green-600 font-bold mr-3">✓</span> {item}
+                <span className="text-slate-600 font-bold mr-3">✓</span> {item}
               </li>
             ))}
           </ul>
         </div>
         <div className="bg-white p-10">
-          <h3 className="text-xl font-bold text-slate-900 mb-6 flex items-center">
+          <h3 className="text-xl font-bold text-amber-900 mb-6 flex items-center">
             <X className="w-6 h-6 mr-2 text-red-500" /> What This Is Not
           </h3>
           <ul className="space-y-4">
@@ -1070,7 +1070,7 @@ const ExecutivesView = ({ setView }: ExecutivesViewProps) => (
 
     <Section className="bg-slate-50">
       <div className="max-w-4xl mx-auto">
-        <h2 className="text-3xl font-bold text-slate-900 mb-8">Why CEOs, CFOs, and Boards Are Looking at Bitcoin</h2>
+        <h2 className="text-3xl font-bold text-amber-900 mb-8">Why CEOs, CFOs, and Boards Are Looking at Bitcoin</h2>
         <div className="prose prose-lg text-slate-600">
           <p className="mb-4">Senior leaders in industrial and chemical businesses are starting to ask:</p>
           <ul className="list-disc pl-6 mb-8 space-y-2 bg-white p-6 rounded-md shadow-sm border border-slate-200">
@@ -1110,11 +1110,11 @@ const ExecutivesView = ({ setView }: ExecutivesViewProps) => (
           <SectionTitle title="The Models Behind Our View" />
           <div className="space-y-8">
             <div>
-              <h4 className="font-bold text-slate-900 text-lg">Long-Horizon Fair-Value</h4>
+              <h4 className="font-bold text-amber-900 text-lg">Long-Horizon Fair-Value</h4>
               <p className="text-slate-600 mt-2">We use power-law models to estimate a long-term “fair value” trajectory. These models are evaluated in log space, where Bitcoin’s behavior is statistically meaningful.</p>
             </div>
             <div>
-              <h4 className="font-bold text-slate-900 text-lg">Lower-Valuation Regimes</h4>
+              <h4 className="font-bold text-amber-900 text-lg">Lower-Valuation Regimes</h4>
               <p className="text-slate-600 mt-2">We pay attention to periods when market price is in the lowest band relative to the model. Historically, these are the most favorable entry points for accumulators.</p>
             </div>
           </div>
@@ -1149,7 +1149,7 @@ const ExecutivesView = ({ setView }: ExecutivesViewProps) => (
           ].map((q, i) => (
             <li key={i} className="flex items-start">
                <span className="text-amber-500 font-bold mr-4 text-xl">?</span>
-               <span className="text-slate-800 font-medium text-lg">{q}</span>
+               <span className="text-amber-800 font-medium text-lg">{q}</span>
             </li>
           ))}
         </ul>
@@ -1495,7 +1495,7 @@ const DataModelsView = () => {
           <div className="flex items-center justify-between mb-8 bg-slate-900/50 p-4 rounded-lg border border-slate-800 backdrop-blur-sm flex-wrap gap-3">
              <div className="flex items-center gap-4 flex-wrap">
                  <h2 className="text-xl font-bold text-white flex items-center gap-2"><LayoutDashboard className="text-amber-500" />Hard Money Dashboard</h2>
-                 <div className="h-6 w-px bg-slate-700 mx-2"></div>
+                 <div className="h-6 w-px bg-amber-700 mx-2"></div>
                  <div className="flex bg-slate-900 border border-slate-700 rounded-md p-1">
                    <button onClick={() => setActiveTab('powerLaw')} className={`px-4 py-1.5 rounded-sm text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 ${activeTab === 'powerLaw' ? 'bg-amber-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'}`}>Power Law Model</button>
                    <button onClick={() => setActiveTab('comparison')} className={`px-4 py-1.5 rounded-sm text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 ${activeTab === 'comparison' ? 'bg-amber-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'}`}>Industrial Race</button>
@@ -1534,17 +1534,17 @@ const DataModelsView = () => {
               <div className="mb-4 flex items-center justify-between"><h2 className="text-xl font-bold text-white border-l-4 border-amber-500 pl-4">Research Dashboard: Long-Horizon Reserve Models</h2></div>
               <div className="grid grid-cols-1 md:grid-cols-5 gap-4 w-full">
                   <div className="bg-slate-900/50 border border-slate-800 p-5 rounded-xl backdrop-blur-sm"><p className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">Actual Price</p><div className="text-2xl font-bold text-white">{currentPrice ? `$${currentPrice.toLocaleString()}` : '---'}</div></div>
-                  <div className="bg-slate-900/50 border border-slate-800 p-5 rounded-xl backdrop-blur-sm"><p className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">Fair Value (Model)</p><div className="text-2xl font-bold text-blue-400">{currentFairPrice ? `$${Math.round(currentFairPrice).toLocaleString()}` : '---'}</div></div>
-                  <div className="bg-slate-900/50 border border-slate-800 p-5 rounded-xl backdrop-blur-sm"><p className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">Deviation</p><div className={`text-2xl font-bold ${((currentPrice && currentFairPrice) ? ((currentPrice - currentFairPrice) / currentFairPrice) * 100 : 0) > 0 ? 'text-red-400' : 'text-green-400'}`}>{((currentPrice && currentFairPrice) ? ((currentPrice - currentFairPrice) / currentFairPrice) * 100 : 0) > 0 ? '+' : ''}{((currentPrice && currentFairPrice) ? ((currentPrice - currentFairPrice) / currentFairPrice) * 100 : 0).toFixed(1)}%</div></div>
+                  <div className="bg-slate-900/50 border border-slate-800 p-5 rounded-xl backdrop-blur-sm"><p className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">Fair Value (Model)</p><div className="text-2xl font-bold text-emerald-400">{currentFairPrice ? `$${Math.round(currentFairPrice).toLocaleString()}` : '---'}</div></div>
+                  <div className="bg-slate-900/50 border border-slate-800 p-5 rounded-xl backdrop-blur-sm"><p className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">Deviation</p><div className={`text-2xl font-bold ${((currentPrice && currentFairPrice) ? ((currentPrice - currentFairPrice) / currentFairPrice) * 100 : 0) > 0 ? 'text-red-400' : 'text-slate-400'}`}>{((currentPrice && currentFairPrice) ? ((currentPrice - currentFairPrice) / currentFairPrice) * 100 : 0) > 0 ? '+' : ''}{((currentPrice && currentFairPrice) ? ((currentPrice - currentFairPrice) / currentFairPrice) * 100 : 0).toFixed(1)}%</div></div>
                   <div className="bg-slate-900/50 border border-slate-800 p-5 rounded-xl backdrop-blur-sm"><p className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">Std Dev (σ)</p><div className="text-2xl font-bold text-purple-400">{stdDev.toFixed(3)}</div><div className="text-[10px] text-slate-500">Log-price residuals</div></div>
                   <div className="bg-slate-900/50 border border-slate-800 p-5 rounded-xl backdrop-blur-sm"><p className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">R-Squared (R²)</p><div className="text-2xl font-bold text-cyan-400">{rSquared.toFixed(4)}</div><div className="text-[10px] text-slate-500">Model Fit (Log-Log)</div></div>
               </div>
 
               <div className="flex flex-wrap items-center justify-between gap-4 px-2 w-full">
-                  <div className="flex items-center gap-2 text-xs text-slate-500"><Database size={14} />Source: <span className={`${plDataSource.includes('Demo') ? 'text-yellow-500' : 'text-green-400'} font-medium`}>{plDataSource}</span></div>
+                  <div className="flex items-center gap-2 text-xs text-slate-500"><Database size={14} />Source: <span className={`${plDataSource.includes('Demo') ? 'text-yellow-500' : 'text-slate-400'} font-medium`}>{plDataSource}</span></div>
                   <div className="flex items-center gap-4">
-                      <div className="flex flex-col items-end gap-1"><div className="flex items-center gap-2 text-[10px] uppercase tracking-wider text-slate-500 font-semibold"><span>Y-Axis</span><div className="flex bg-slate-900 border border-slate-800 rounded overflow-hidden"><button onClick={() => setYScale('log')} className={`px-2 py-1 ${yScale === 'log' ? 'bg-slate-700 text-white' : 'hover:bg-slate-800'}`}>Log</button><button onClick={() => setYScale('linear')} className={`px-2 py-1 ${yScale === 'linear' ? 'bg-slate-700 text-white' : 'hover:bg-slate-800'}`}>Lin</button></div></div></div>
-                      <div className="flex flex-col items-end gap-1"><div className="flex items-center gap-2 text-[10px] uppercase tracking-wider text-slate-500 font-semibold"><span>X-Axis</span><div className="flex bg-slate-900 border border-slate-800 rounded overflow-hidden"><button onClick={() => setXScale('log-days')} className={`px-2 py-1 ${xScale === 'log-days' ? 'bg-slate-700 text-white' : 'hover:bg-slate-800'}`}>Log</button><button onClick={() => setXScale('date')} className={`px-2 py-1 ${xScale === 'date' ? 'bg-slate-700 text-white' : 'hover:bg-slate-800'}`}>Time</button></div></div></div>
+                      <div className="flex flex-col items-end gap-1"><div className="flex items-center gap-2 text-[10px] uppercase tracking-wider text-slate-500 font-semibold"><span>Y-Axis</span><div className="flex bg-slate-900 border border-slate-800 rounded overflow-hidden"><button onClick={() => setYScale('log')} className={`px-2 py-1 ${yScale === 'log' ? 'bg-amber-700 text-white' : 'hover:bg-slate-800'}`}>Log</button><button onClick={() => setYScale('linear')} className={`px-2 py-1 ${yScale === 'linear' ? 'bg-amber-700 text-white' : 'hover:bg-slate-800'}`}>Lin</button></div></div></div>
+                      <div className="flex flex-col items-end gap-1"><div className="flex items-center gap-2 text-[10px] uppercase tracking-wider text-slate-500 font-semibold"><span>X-Axis</span><div className="flex bg-slate-900 border border-slate-800 rounded overflow-hidden"><button onClick={() => setXScale('log-days')} className={`px-2 py-1 ${xScale === 'log-days' ? 'bg-amber-700 text-white' : 'hover:bg-slate-800'}`}>Log</button><button onClick={() => setXScale('date')} className={`px-2 py-1 ${xScale === 'date' ? 'bg-amber-700 text-white' : 'hover:bg-slate-800'}`}>Time</button></div></div></div>
                   </div>
               </div>
 
@@ -1553,8 +1553,8 @@ const DataModelsView = () => {
                       <h2 className="text-sm font-semibold text-slate-400">BTC Power Law Projection (2009 - {PROJECT_TO_YEAR})</h2>
                       <div className="flex gap-4 text-xs">
                           <span className="flex items-center gap-1 text-red-400"><div className="w-2 h-2 rounded-full bg-red-400/50"/> +3σ (Upper)</span>
-                          <span className="flex items-center gap-1 text-blue-400"><div className="w-2 h-2 rounded-full bg-blue-400"/> Model</span>
-                          <span className="flex items-center gap-1 text-green-400"><div className="w-2 h-2 rounded-full bg-green-400/50"/> -1σ (Lower)</span>
+                          <span className="flex items-center gap-1 text-emerald-400"><div className="w-2 h-2 rounded-full bg-emerald-400"/> Model</span>
+                          <span className="flex items-center gap-1 text-slate-400"><div className="w-2 h-2 rounded-full bg-amber-400/50"/> -1σ (Lower)</span>
                       </div>
                   </div>
                   {plLoading ? (
@@ -1578,7 +1578,7 @@ const DataModelsView = () => {
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm text-slate-400 bg-slate-900/30 p-6 rounded-xl border border-slate-800 w-full">
                   <div><h3 className="text-white font-semibold mb-2 flex items-center gap-2"><Settings size={14} /> Model Settings</h3><ul className="space-y-1 list-disc list-inside text-slate-500 text-xs"><li>Coeff: {MODEL_COEFF}</li><li>Exponent: {MODEL_EXPONENT}</li></ul></div>
-                  <div className="flex items-end justify-end"><button onClick={downloadPlCSV} className="flex items-center gap-2 text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-200 px-4 py-2 rounded-md transition-colors border border-slate-700"><Download size={14} /> Export CSV</button></div>
+                  <div className="flex items-end justify-end"><button onClick={downloadPlCSV} className="flex items-center gap-2 text-xs font-medium bg-slate-800 hover:bg-amber-700 text-slate-200 px-4 py-2 rounded-md transition-colors border border-slate-700"><Download size={14} /> Export CSV</button></div>
               </div>
              </div>
           ) : (
@@ -1623,11 +1623,11 @@ const DataModelsView = () => {
                               <div className="text-xs text-slate-500 uppercase tracking-wider mt-1">Wins</div>
                               <div className="text-xs font-medium text-slate-300 mt-2 truncate w-full" title={item.name}>{item.name}</div>
                               <div className="mt-3 pt-3 border-t border-slate-700 w-full text-[10px] space-y-1">
-                                  <div className="flex justify-between text-slate-400 items-center"><span>2Y CAGR:</span><span className={item.cagr2 !== null ? (item.cagr2 >= 0 ? 'text-green-400' : 'text-red-400') : 'text-slate-500'}>{item.cagr2 !== null ? `${item.cagr2.toFixed(1)}%` : 'N/A'}</span></div>
-                                  <div className="flex justify-between text-slate-400 items-center"><span>3Y CAGR:</span><span className={item.cagr3 !== null ? (item.cagr3 >= 0 ? 'text-green-400' : 'text-red-400') : 'text-slate-500'}>{item.cagr3 !== null ? `${item.cagr3.toFixed(1)}%` : 'N/A'}</span></div>
-                                  <div className="flex justify-between text-slate-400 items-center"><span>5Y CAGR:</span><span className={item.cagr5 !== null ? (item.cagr5 >= 0 ? 'text-green-400' : 'text-red-400') : 'text-slate-500'}>{item.cagr5 !== null ? `${item.cagr5.toFixed(1)}%` : 'N/A'}</span></div>
-                                  <div className="flex justify-between text-slate-400 items-center"><span title={item.symbol === 'DOW' ? 'Since 2019' : '10 Year'}>{item.symbol === 'DOW' ? '6Y' : '10Y'} CAGR:</span><span className={item.cagr10 !== null ? (item.cagr10 >= 0 ? 'text-green-400' : 'text-red-400') : 'text-slate-500'}>{item.cagr10 !== null ? `${item.cagr10.toFixed(1)}%` : 'N/A'}</span></div>
-                                  <div className="flex justify-between text-slate-400 items-center border-t border-slate-800 pt-1 mt-1"><span>Total:</span><span className={item.totalReturn !== null ? (item.totalReturn >= 0 ? 'text-green-400' : 'text-red-400') : 'text-slate-500'}>{item.totalReturn !== null ? `${item.totalReturn.toFixed(0)}%` : 'N/A'}</span></div>
+                                  <div className="flex justify-between text-slate-400 items-center"><span>2Y CAGR:</span><span className={item.cagr2 !== null ? (item.cagr2 >= 0 ? 'text-slate-400' : 'text-red-400') : 'text-slate-500'}>{item.cagr2 !== null ? `${item.cagr2.toFixed(1)}%` : 'N/A'}</span></div>
+                                  <div className="flex justify-between text-slate-400 items-center"><span>3Y CAGR:</span><span className={item.cagr3 !== null ? (item.cagr3 >= 0 ? 'text-slate-400' : 'text-red-400') : 'text-slate-500'}>{item.cagr3 !== null ? `${item.cagr3.toFixed(1)}%` : 'N/A'}</span></div>
+                                  <div className="flex justify-between text-slate-400 items-center"><span>5Y CAGR:</span><span className={item.cagr5 !== null ? (item.cagr5 >= 0 ? 'text-slate-400' : 'text-red-400') : 'text-slate-500'}>{item.cagr5 !== null ? `${item.cagr5.toFixed(1)}%` : 'N/A'}</span></div>
+                                  <div className="flex justify-between text-slate-400 items-center"><span title={item.symbol === 'DOW' ? 'Since 2019' : '10 Year'}>{item.symbol === 'DOW' ? '6Y' : '10Y'} CAGR:</span><span className={item.cagr10 !== null ? (item.cagr10 >= 0 ? 'text-slate-400' : 'text-red-400') : 'text-slate-500'}>{item.cagr10 !== null ? `${item.cagr10.toFixed(1)}%` : 'N/A'}</span></div>
+                                  <div className="flex justify-between text-slate-400 items-center border-t border-slate-800 pt-1 mt-1"><span>Total:</span><span className={item.totalReturn !== null ? (item.totalReturn >= 0 ? 'text-slate-400' : 'text-red-400') : 'text-slate-500'}>{item.totalReturn !== null ? `${item.totalReturn.toFixed(0)}%` : 'N/A'}</span></div>
                               </div>
                           </div>
                           ))}
@@ -1659,7 +1659,7 @@ const App = () => {
       body { display: block !important; min-width: 0 !important; place-items: unset !important; }
       #root { max-width: none !important; margin: 0 !important; padding: 0 !important; text-align: left !important; width: 100% !important; }
     `}</style>
-    <div className="min-h-screen bg-white font-sans text-slate-900 selection:bg-amber-200 flex flex-col">
+    <div className="min-h-screen bg-white font-sans text-amber-900 selection:bg-amber-200 flex flex-col">
       <Navbar currentView={currentView} setView={setView} />
       
       <main className="flex-grow flex flex-col w-full relative">

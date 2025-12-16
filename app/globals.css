@@ -2,12 +2,12 @@
 
 :root {
   --background: #ffffff;
-  --foreground: #0f172a; /* Slate 900 */
-  --primary: #0f766e; /* Teal 700 */
-  --primary-foreground: #ffffff;
+  --foreground: #0f172a; /* Slate 900 - Dark background */
+  --primary: #f59e0b; /* Amber 500 - Gold accent */
+  --primary-foreground: #0f172a;
   --secondary: #f1f5f9; /* Slate 100 */
   --secondary-foreground: #0f172a;
-  --muted: #94a3b8; /* Slate 400 */
+  --muted: #64748b; /* Slate 500 */
   --accent: #d97706; /* Amber 600 */
 }
 
