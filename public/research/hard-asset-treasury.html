@@ -16,27 +16,90 @@
 </head>
 <body class="bg-white text-slate-900 selection:bg-slate-200">
 
-    <!-- HEADER -->
-    <header class="border-b border-slate-200 sticky top-0 bg-white/95 backdrop-blur-sm z-50">
-        <div class="max-w-6xl mx-auto px-6 h-20 flex items-center justify-between">
-            <a href="/" class="flex items-center gap-3 group">
-                <div class="w-10 h-10 bg-blue-900 text-white flex items-center justify-center rounded-lg shadow-sm group-hover:bg-blue-800 transition-colors">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6">
-                        <path fill-rule="evenodd" d="M12 2.25a.75.75 0 01.75.75v2.25h3a2.25 2.25 0 012.25 2.25v.612a2.25 2.25 0 01-.5.432l-1.5 1.125v5.831a2.25 2.25 0 01-2.25 2.25h-12a.75.75 0 01-.75-.75v-5.83l-1.5-1.126A2.25 2.25 0 014.25 5.25h3V3a.75.75 0 01.75-.75h4zM6.75 7.5a.75.75 0 00-.75.75v.75h12v-.75a.75.75 0 00-.75-.75h-10.5zM6.75 10.5a.75.75 0 00-.75.75v3.75c0 .414.336.75.75.75h.75a.75.75 0 00.75-.75v-3.75a.75.75 0 00-.75-.75h-.75zM11.25 10.5a.75.75 0 00-.75.75v3.75c0 .414.336.75.75.75h.75a.75.75 0 00.75-.75v-3.75a.75.75 0 00-.75-.75h-.75zM15.75 10.5a.75.75 0 00-.75.75v3.75c0 .414.336.75.75.75h.75a.75.75 0 00.75-.75v-3.75a.75.75 0 00-.75-.75h-.75z" clip-rule="evenodd" />
+    <!-- HEADER (match main site) -->
+    <nav class="bg-slate-900 border-b border-slate-800 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-20">
+                <a href="/" class="flex items-center">
+                    <svg class="h-8 w-8 text-slate-500 mr-3" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                        <path fill-rule="evenodd" d="M12 2.25a.75.75 0 01.75.75v2.25h3a2.25 2.25 0 012.25 2.25v.612a2.25 2.25 0 01-.5.432l-1.5 1.125v5.831a2.25 2.25 0 01-2.25 2.25h-12a2.25 2.25 0 01-2.25-2.25v-5.83l-1.5-1.126a2.25 2.25 0 01-.5-.432V7.5A2.25 2.25 0 014.25 5.25h3V3a.75.75 0 01.75-.75h4zM6.75 7.5a.75.75 0 00-.75.75v.75h12v-.75a.75.75 0 00-.75-.75h-10.5zM6.75 10.5a.75.75 0 00-.75.75v3.75c0 .414.336.75.75.75h.75a.75.75 0 00.75-.75v-3.75a.75.75 0 00-.75-.75h-.75zM11.25 10.5a.75.75 0 00-.75.75v3.75c0 .414.336.75.75.75h.75a.75.75 0 00.75-.75v-3.75a.75.75 0 00-.75-.75h-.75zM15.75 10.5a.75.75 0 00-.75.75v3.75c0 .414.336.75.75.75h.75a.75.75 0 00.75-.75v-3.75a.75.75 0 00-.75-.75h-.75z" clip-rule="evenodd" />
                     </svg>
+                    <span class="text-white text-xl font-bold tracking-tight">
+                        The Sound Treasury <span class="text-slate-400 font-light">Institute</span>
+                    </span>
+                </a>
+
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-8">
+                        <a href="/" class="text-slate-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition-colors">Home</a>
+
+                        <div class="relative group">
+                            <button type="button" class="text-amber-500 px-3 py-2 rounded-md text-sm font-medium transition-colors inline-flex items-center gap-1">
+                                Research
+                                <svg class="h-4 w-4 opacity-80" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                    <path d="M6.293 8.293a1 1 0 011.414 0L12 12.586l4.293-4.293a1 1 0 111.414 1.414l-5 5a1 1 0 01-1.414 0l-5-5a1 1 0 010-1.414z"/>
+                                </svg>
+                            </button>
+                            <div class="hidden group-hover:block absolute left-0 mt-2 w-[420px] max-w-[80vw] rounded-lg border border-slate-800 bg-slate-950 shadow-xl overflow-hidden">
+                                <div class="max-h-[70vh] overflow-auto py-2">
+                                    <a href="/research/articles.html" class="block px-4 py-2 text-sm text-slate-300 hover:bg-slate-900 hover:text-white">Research Library</a>
+                                    <a href="/research/article.html" class="block px-4 py-2 text-sm text-slate-300 hover:bg-slate-900 hover:text-white">Liquidity Horizons in Cyclical Industries</a>
+                                    <a href="/research/article.html" class="block px-4 py-2 text-sm text-slate-300 hover:bg-slate-900 hover:text-white">Balance-Sheet Architecture as Strategy</a>
+                                    <a href="/research/article.html" class="block px-4 py-2 text-sm text-slate-300 hover:bg-slate-900 hover:text-white">Throughput Economics &amp; Process Reliability</a>
+                                    <a href="/research/article.html" class="block px-4 py-2 text-sm text-slate-300 hover:bg-slate-900 hover:text-white">Global Cost Curves in Chemicals &amp; Plastics</a>
+                                    <a href="/research/monetizing-trapped-energy.html" class="block px-4 py-2 text-sm text-slate-300 hover:bg-slate-900 hover:text-white">Monetizing Trapped Energy in Industrial Sites</a>
+                                    <a href="/research/hard-asset-treasury.html" class="block px-4 py-2 text-sm text-slate-300 hover:bg-slate-900 hover:text-white">Hard-Asset Treasury Strategies for Chemicals &amp; Industrial</a>
+                                    <a href="/research/article.html" class="block px-4 py-2 text-sm text-slate-300 hover:bg-slate-900 hover:text-white">System Drift: The Hidden Risk in Industrial Operations</a>
+                                    <a href="/research/article.html" class="block px-4 py-2 text-sm text-slate-300 hover:bg-slate-900 hover:text-white">Leading Indicators of Enterprise Fragility</a>
+                                    <a href="/research/article.html" class="block px-4 py-2 text-sm text-slate-300 hover:bg-slate-900 hover:text-white">The Structural Cost of Capital Regime</a>
+                                    <a href="/research/article.html" class="block px-4 py-2 text-sm text-slate-300 hover:bg-slate-900 hover:text-white">Demography, Productivity, and Industrial Output</a>
+                                    <a href="/data-model" class="block px-4 py-2 text-sm text-slate-300 hover:bg-slate-900 hover:text-white">Long-Horizon Reserve Model &amp; Industrial Benchmark (Interactive)</a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <a href="/data-model" class="text-slate-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition-colors">Data &amp; Models</a>
+                        <a href="/about" class="text-slate-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition-colors">About This Project</a>
+                        <a href="/#faq" class="text-slate-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition-colors">FAQ</a>
+                    </div>
                 </div>
-                <div class="serif text-2xl tracking-tight font-bold text-slate-900 group-hover:text-blue-900 transition-colors">
-                    Sound Treasury Institute
+
+                <div class="-mr-2 flex md:hidden">
+                    <button id="mobileMenuBtn" class="bg-slate-800 inline-flex items-center justify-center p-2 rounded-md text-slate-400 hover:text-white" aria-expanded="false">
+                        <span class="sr-only">Open main menu</span>
+                        <svg class="h-6 w-6" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                            <path d="M4 6h16v2H4V6zm0 5h16v2H4v-2zm0 5h16v2H4v-2z"/>
+                        </svg>
+                    </button>
                 </div>
-            </a>
-            <nav class="hidden md:flex space-x-8 text-sm font-medium tracking-wide text-slate-600">
-                <a href="/" class="hover:text-slate-900">Home</a>
-                <a href="/research/articles.html" class="hover:text-slate-900">Research</a>
-                <a href="/about" class="hover:text-slate-900">Approach</a>
-                <a href="/about" class="hover:text-slate-900">About</a>
-            </nav>
+            </div>
         </div>
-    </header>
+
+        <div id="mobileMenu" class="hidden md:hidden bg-slate-900 border-b border-slate-800">
+            <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+                <a href="/" class="text-slate-300 hover:text-white block px-3 py-2 rounded-md text-base font-medium w-full text-left">Home</a>
+                <a href="/research/articles.html" class="text-slate-300 hover:text-white block px-3 py-2 rounded-md text-base font-medium w-full text-left">Research</a>
+                <a href="/data-model" class="text-slate-300 hover:text-white block px-3 py-2 rounded-md text-base font-medium w-full text-left">Data &amp; Models</a>
+                <a href="/about" class="text-slate-300 hover:text-white block px-3 py-2 rounded-md text-base font-medium w-full text-left">About This Project</a>
+                <a href="/#faq" class="text-slate-300 hover:text-white block px-3 py-2 rounded-md text-base font-medium w-full text-left">FAQ</a>
+            </div>
+        </div>
+    </nav>
+
+    <script>
+        (function () {
+            var btn = document.getElementById('mobileMenuBtn');
+            var menu = document.getElementById('mobileMenu');
+            if (btn && menu) {
+                btn.addEventListener('click', function () {
+                    var isHidden = menu.classList.contains('hidden');
+                    if (isHidden) menu.classList.remove('hidden');
+                    else menu.classList.add('hidden');
+                    btn.setAttribute('aria-expanded', String(isHidden));
+                });
+            }
+        })();
+    </script>
 
     <!-- HERO -->
     <section class="pt-24 pb-20 px-6 bg-slate-50 border-b border-slate-200">
