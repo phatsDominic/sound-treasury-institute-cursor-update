@@ -1,10 +1,12 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import Link from 'next/link';
+import { usePathname, useRouter } from 'next/navigation';
 
 import { 
   Activity, Anchor, BarChart3, Building, Database, Download, Factory, FileText,
   FlaskConical, Globe, HardHat, LayoutDashboard, Loader2, Menu, RefreshCcw,
-  Settings, Shield, ShieldCheck, Trophy, TrendingUp, Truck, X, AlertCircle, Car
+  Settings, Shield, ShieldCheck, Trophy, TrendingUp, Truck, X, AlertCircle, Car, ChevronDown
 } from 'lucide-react';
 
 import {
@@ -674,42 +676,125 @@ const ImageWithFallback = ({ src, fallback, alt, className }: ImageWithFallbackP
 
 interface NavbarProps {
   currentView: string;
-  setView: (view: string) => void;
 }
 
-const Navbar = ({ currentView, setView }: NavbarProps) => {
+const Navbar = ({ currentView }: NavbarProps) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [isResearchOpen, setIsResearchOpen] = useState(false);
+  const [isResearchMobileOpen, setIsResearchMobileOpen] = useState(false);
+  const researchCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const openResearch = () => {
+    if (researchCloseTimer.current) {
+      clearTimeout(researchCloseTimer.current);
+      researchCloseTimer.current = null;
+    }
+    setIsResearchOpen(true);
+  };
+
+  const scheduleCloseResearch = () => {
+    if (researchCloseTimer.current) clearTimeout(researchCloseTimer.current);
+    // Small delay so the menu doesn't disappear when moving the cursor
+    // from the trigger to the absolutely-positioned menu.
+    researchCloseTimer.current = setTimeout(() => {
+      setIsResearchOpen(false);
+      researchCloseTimer.current = null;
+    }, 150);
+  };
+
+  const researchItems = [
+    // Copied locally from http://localhost:8000 into /public/research (no redirects).
+    { label: 'Research Library', href: '/research/articles.html', external: false },
+    { label: 'Liquidity Horizons in Cyclical Industries', href: '/research/article.html', external: false },
+    { label: 'Balance-Sheet Architecture as Strategy', href: '/research/article.html', external: false },
+    { label: 'Throughput Economics & Process Reliability', href: '/research/article.html', external: false },
+    { label: 'Global Cost Curves in Chemicals & Plastics', href: '/research/article.html', external: false },
+    { label: 'Monetizing Trapped Energy in Industrial Sites', href: '/research/monetizing-trapped-energy.html', external: false },
+    { label: 'Hard-Asset Treasury Strategies for Chemicals & Industrial', href: '/research/hard-asset-treasury.html', external: false },
+    { label: 'System Drift: The Hidden Risk in Industrial Operations', href: '/research/article.html', external: false },
+    { label: 'Leading Indicators of Enterprise Fragility', href: '/research/article.html', external: false },
+    { label: 'The Structural Cost of Capital Regime', href: '/research/article.html', external: false },
+    { label: 'Demography, Productivity, and Industrial Output', href: '/research/article.html', external: false },
+    // This one should point to this project's existing Data & Models page.
+    { label: 'Long-Horizon Reserve Model & Industrial Benchmark (Interactive)', href: '/data-model', external: false },
+  ] as const;
+
   const navLinks = [
-    { label: 'Home', view: 'home', section: '' },
-    { label: 'Data & Models', view: 'data', section: '' },
-    { label: 'About This Project', view: 'executives', section: '' },
-    { label: 'FAQ', view: 'home', section: 'faq' },
-  ];
+    { label: 'Home', href: '/', view: 'home' },
+    { label: 'Data & Models', href: '/data-model', view: 'data' },
+    { label: 'About This Project', href: '/about', view: 'executives' },
+    { label: 'FAQ', href: '/#faq', view: 'home' },
+  ] as const;
 
   return (
     <nav className="bg-slate-900 border-b border-slate-800 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
-          <div className="flex items-center cursor-pointer" onClick={() => setView('home')}>
+          <Link href="/" className="flex items-center">
             <Shield className="h-8 w-8 text-slate-500 mr-3" />
-            <span className="text-white text-xl font-bold tracking-tight">The Sound Treasury <span className="text-slate-400 font-light">Institute</span></span>
-          </div>
+            <span className="text-white text-xl font-bold tracking-tight">
+              The Sound Treasury <span className="text-slate-400 font-light">Institute</span>
+            </span>
+          </Link>
           <div className="hidden md:block">
             <div className="ml-10 flex items-baseline space-x-8">
-              {navLinks.map((link) => (
+              <Link
+                href="/"
+                className={`${currentView === 'home' ? 'text-amber-500' : 'text-slate-300 hover:text-white'} px-3 py-2 rounded-md text-sm font-medium transition-colors`}
+              >
+                Home
+              </Link>
+
+              {/* Research dropdown */}
+              <div
+                className="relative"
+                onMouseEnter={openResearch}
+                onMouseLeave={scheduleCloseResearch}
+              >
                 <button
+                  type="button"
+                  className={`${isResearchOpen ? 'text-amber-500' : 'text-slate-300 hover:text-white'} px-3 py-2 rounded-md text-sm font-medium transition-colors inline-flex items-center gap-1`}
+                  aria-haspopup="menu"
+                  aria-expanded={isResearchOpen}
+                  onMouseEnter={openResearch}
+                  onMouseLeave={scheduleCloseResearch}
+                  onClick={() => setIsResearchOpen((v) => !v)}
+                >
+                  Research
+                  <ChevronDown className="h-4 w-4 opacity-80" />
+                </button>
+
+                {isResearchOpen && (
+                  <div
+                    role="menu"
+                    className="absolute left-0 mt-2 w-[420px] max-w-[80vw] rounded-lg border border-slate-800 bg-slate-950 shadow-xl overflow-hidden"
+                    onMouseEnter={openResearch}
+                    onMouseLeave={scheduleCloseResearch}
+                  >
+                    <div className="max-h-[70vh] overflow-auto py-2">
+                      {researchItems.map((item) => (
+                        <a
+                          key={item.label}
+                          href={item.href}
+                          className="block px-4 py-2 text-sm text-slate-300 hover:bg-slate-900 hover:text-white"
+                          onClick={() => setIsResearchOpen(false)}
+                        >
+                          {item.label}
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {navLinks.slice(1).map((link) => (
+                <Link
                   key={link.label}
-                  onClick={() => {
-                    setView(link.view);
-                    if(link.section) setTimeout(() => {
-                         const el = document.getElementById(link.section);
-                         if(el) el.scrollIntoView({ behavior: 'smooth' });
-                    }, 100);
-                  }}
+                  href={link.href}
                   className={`${currentView === link.view ? 'text-amber-500' : 'text-slate-300 hover:text-white'} px-3 py-2 rounded-md text-sm font-medium transition-colors`}
                 >
                   {link.label}
-                </button>
+                </Link>
               ))}
             </div>
           </div>
@@ -723,17 +808,53 @@ const Navbar = ({ currentView, setView }: NavbarProps) => {
       {isOpen && (
         <div className="md:hidden bg-slate-900 border-b border-slate-800">
           <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-            {navLinks.map((link) => (
+            <Link
+              href="/"
+              onClick={() => setIsOpen(false)}
+              className="text-slate-300 hover:text-white block px-3 py-2 rounded-md text-base font-medium w-full text-left"
+            >
+              Home
+            </Link>
+
+            {/* Mobile Research dropdown */}
+            <div className="px-3 py-2">
               <button
+                className="text-slate-300 hover:text-white text-base font-medium w-full text-left flex items-center justify-between"
+                onClick={() => setIsResearchMobileOpen((v) => !v)}
+                aria-expanded={isResearchMobileOpen}
+              >
+                <span>Research</span>
+                <ChevronDown className={`h-5 w-5 transition-transform ${isResearchMobileOpen ? 'rotate-180' : ''}`} />
+              </button>
+
+              {isResearchMobileOpen && (
+                <div className="mt-2 space-y-1 border-l border-slate-800 pl-3">
+                  {researchItems.map((item) => (
+                    <a
+                      key={item.label}
+                      href={item.href}
+                      className="block py-2 text-sm text-slate-400 hover:text-white"
+                      onClick={() => {
+                        setIsOpen(false);
+                        setIsResearchMobileOpen(false);
+                      }}
+                    >
+                      {item.label}
+                    </a>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {navLinks.slice(1).map((link) => (
+              <Link
                 key={link.label}
-                onClick={() => {
-                  setView(link.view);
-                  setIsOpen(false);
-                }}
+                href={link.href}
+                onClick={() => setIsOpen(false)}
                 className="text-slate-300 hover:text-white block px-3 py-2 rounded-md text-base font-medium w-full text-left"
               >
                 {link.label}
-              </button>
+              </Link>
             ))}
           </div>
         </div>
@@ -1652,11 +1773,24 @@ const DataModelsView = () => {
 // --- 6. APP (Defined Last) ---
 
 const App = () => {
-  const [currentView, setView] = useState('home');
+  const router = useRouter();
+  const pathname = usePathname();
+
+  const viewFromPath = useMemo(() => {
+    if (pathname?.startsWith('/data-model')) return 'data';
+    if (pathname?.startsWith('/about')) return 'executives';
+    return 'home';
+  }, [pathname]);
 
   useEffect(() => {
     window.scrollTo(0, 0);
-  }, [currentView]);
+  }, [viewFromPath]);
+
+  const setView = (view: string) => {
+    if (view === 'data') router.push('/data-model');
+    else if (view === 'executives') router.push('/about');
+    else router.push('/');
+  };
 
   return (
     <>
@@ -1666,12 +1800,12 @@ const App = () => {
       #root { max-width: none !important; margin: 0 !important; padding: 0 !important; text-align: left !important; width: 100% !important; }
     `}</style>
     <div className="min-h-screen bg-white font-sans text-amber-900 selection:bg-amber-200 flex flex-col">
-      <Navbar currentView={currentView} setView={setView} />
+      <Navbar currentView={viewFromPath} />
       
       <main className="flex-grow flex flex-col w-full relative">
-        {currentView === 'home' && <HomeView setView={setView} />}
-        {currentView === 'executives' && <ExecutivesView setView={setView} />}
-        {currentView === 'data' && <DataModelsView />}
+        {viewFromPath === 'home' && <HomeView setView={setView} />}
+        {viewFromPath === 'executives' && <ExecutivesView setView={setView} />}
+        {viewFromPath === 'data' && <DataModelsView />}
       </main>
       
       <Footer />
